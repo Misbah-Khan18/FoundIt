@@ -1,0 +1,592 @@
+/* ==========================================================================
+   MIT-WPU FoundIt — Premium SaaS Dashboard Layout Design System
+   ========================================================================== */
+
+.dash {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  min-height: 100vh;
+  background-color: #f8fafc;
+  color: #0f172a;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* --------------------------------------------------------------------------
+   SIDEBAR
+   -------------------------------------------------------------------------- */
+.dash__sidebar {
+  background: linear-gradient(180deg, #0b1329 0%, #070e20 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 24px 16px 20px;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  z-index: 120;
+  box-sizing: border-box;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+.dash__sidebar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.dash__sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+/* Sidebar Brand Header */
+.dash__brand-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding: 0 4px;
+}
+
+.dash__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+/* Official MIT-WPU Circular White Badge */
+.dash__brand-mark {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  padding: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.15);
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dash__brand:hover .dash__brand-mark {
+  transform: scale(1.06);
+}
+
+.dash__brand-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.dash__brand-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.dash__brand-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.dash__brand-subtitle {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #7d90b2;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-top: 3px;
+}
+
+.dash__close-drawer-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+}
+
+.dash__close-drawer-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* User Profile Card */
+.dash__user-card {
+  padding: 12px 14px;
+  margin-bottom: 22px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  backdrop-filter: blur(10px);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.dash__user-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.dash__user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(37, 99, 235, 0.15));
+  color: #60a5fa;
+  border: 1px solid rgba(96, 165, 250, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.dash__user-avatar--admin {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.15));
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.dash__user-info {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.dash__user-name {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.01em;
+}
+
+.dash__user-role {
+  font-size: 0.7rem;
+  color: #8da2c4;
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash__user-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.68rem;
+  color: #34d399;
+  font-weight: 600;
+  margin-top: 3px;
+}
+
+.dash__status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+  animation: dashPulse 2s infinite ease-in-out;
+}
+
+@keyframes dashPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+}
+
+/* Sidebar Navigation */
+.dash__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+}
+
+.dash__nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dash__nav-label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #556788;
+  padding: 4px 12px 6px;
+}
+
+.dash__nav-items {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+/* Nav Item Link */
+.dash__link {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.87rem;
+  font-weight: 500;
+  color: #8fa0c2;
+  text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.dash__link:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  transform: translateX(2px);
+}
+
+.dash__link-icon {
+  flex-shrink: 0;
+  color: #7b8eaec0;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.dash__link:hover .dash__link-icon {
+  color: #ffffff;
+}
+
+.dash__link-text {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash__link-badge {
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+  line-height: 1;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
+}
+
+/* Active Nav State - Glowing Blue SaaS Accent */
+.dash__link--active {
+  background: linear-gradient(90deg, #2563eb 0%, #1d4ed8 100%) !important;
+  color: #ffffff !important;
+  font-weight: 600;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.dash__link--active .dash__link-icon {
+  color: #ffffff;
+}
+
+/* Logout Button */
+.dash__sidebar-actions {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dash__logout {
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.86rem;
+  font-weight: 500;
+  color: #8fa0c2;
+  transition: all 0.2s ease;
+}
+
+.dash__logout:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  transform: translateX(2px);
+}
+
+/* MIT-WPU University Watermark Footer */
+.dash__sidebar-footer {
+  margin-top: 16px;
+  padding: 16px 12px 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  text-align: center;
+  position: relative;
+}
+
+.dash__footer-svg {
+  width: 100%;
+  height: 28px;
+  color: #3b82f6;
+  margin-bottom: 6px;
+}
+
+.dash__footer-brand {
+  font-weight: 800;
+  font-size: 0.8rem;
+  color: #8ba0c4;
+  letter-spacing: 0.08em;
+}
+
+.dash__footer-motto {
+  font-size: 0.65rem;
+  color: #556788;
+  margin-top: 2px;
+  letter-spacing: 0.03em;
+}
+
+/* --------------------------------------------------------------------------
+   DASHBOARD BODY & TOP NAVBAR
+   -------------------------------------------------------------------------- */
+.dash__body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-width: 0;
+  background-color: #f8fafc;
+}
+
+/* Top Sticky Header */
+.dash__header {
+  padding: 16px 36px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  gap: 20px;
+}
+
+.dash__breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.dash__breadcrumb-prefix {
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.dash__breadcrumb-divider {
+  font-size: 0.85rem;
+  color: #cbd5e1;
+}
+
+.dash__breadcrumb-title {
+  font-family: var(--font-display);
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+}
+
+.dash__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* Public Portal Button */
+.dash__public-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: #ffffff;
+  color: #1e293b;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dash__public-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.08);
+}
+
+/* Main Inner Wrapper - Fluid 100% Screen Fit */
+.dash__main-inner {
+  flex: 1;
+  padding: 24px 32px 50px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* --------------------------------------------------------------------------
+   MOBILE NAVIGATION & RESPONSIVENESS
+   -------------------------------------------------------------------------- */
+.dash__mobile-bar {
+  display: none;
+}
+
+.dash__backdrop {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .dash {
+    grid-template-columns: 1fr;
+  }
+
+  /* Sticky Top Bar for Mobile */
+  .dash__mobile-bar {
+    display: flex;
+    position: sticky;
+    top: 0;
+    z-index: 150;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  }
+
+  .dash__mobile-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .dash__brand-mark-mini {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #ffffff;
+    padding: 2px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .dash__mobile-title {
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+  }
+
+  .dash__mobile-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .dash__mobile-btn {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    color: #0f172a;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+
+  .dash__mobile-btn:hover {
+    background: #e2e8f0;
+  }
+
+  /* Hide Desktop Header on Small Screens */
+  .dash__header {
+    display: none;
+  }
+
+  /* Backdrop blur for mobile drawer */
+  .dash__backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(11, 19, 41, 0.65);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 180;
+    animation: fadeInOverlay 0.25s ease;
+  }
+
+  @keyframes fadeInOverlay {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Slide-out Drawer */
+  .dash__sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 290px;
+    max-width: 85vw;
+    z-index: 200;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.35);
+  }
+
+  .dash__sidebar--open {
+    transform: translateX(0);
+  }
+
+  .dash__close-drawer-btn {
+    display: flex;
+  }
+
+  .dash__main-inner {
+    padding: 16px 14px 44px;
+  }
+}

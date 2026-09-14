@@ -1,0 +1,14 @@
+.report-form {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.report-form__card {
+  padding: 32px 30px;
+}
+
+@media (max-width: 560px) {
+  .report-form__card {
+    padding: 20px 16px;
+  }
+}

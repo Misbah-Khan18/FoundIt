@@ -1,0 +1,176 @@
+/* =========================================================================
+   GlowingPaths Background Light Trails Stylesheet
+   ========================================================================= */
+
+.glowing-paths-container {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.glowing-paths-svg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  display: block;
+}
+
+/* --- Section Positions --- */
+.glowing-paths__hero {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.glowing-paths__middle {
+  position: absolute;
+  top: 130vh;
+  left: 0;
+  width: 100%;
+  height: 600px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.glowing-paths__bottom {
+  position: absolute;
+  bottom: 240px;
+  left: 0;
+  width: 100%;
+  height: 300px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* --- Floating animations for organic path movement --- */
+.glowing-paths__group {
+  transform-origin: center center;
+  will-change: transform;
+}
+
+.glowing-paths__group--top-left {
+  animation: float-top-left 16s ease-in-out infinite alternate;
+}
+
+.glowing-paths__group--top-right {
+  animation: float-top-right 18s ease-in-out infinite alternate;
+}
+
+.glowing-paths__group--mid-left {
+  animation: float-mid-left 22s ease-in-out infinite alternate;
+}
+
+.glowing-paths__group--mid-right {
+  animation: float-mid-right 24s ease-in-out infinite alternate;
+}
+
+@keyframes float-top-left {
+  0% {
+    transform: translate(0px, 0px) rotate(0deg);
+  }
+  100% {
+    transform: translate(6px, -4px) rotate(0.4deg);
+  }
+}
+
+@keyframes float-top-right {
+  0% {
+    transform: translate(0px, 0px) rotate(0deg);
+  }
+  100% {
+    transform: translate(-6px, 4px) rotate(-0.4deg);
+  }
+}
+
+@keyframes float-mid-left {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  100% {
+    transform: translate(8px, -5px) scale(1.01);
+  }
+}
+
+@keyframes float-mid-right {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  100% {
+    transform: translate(-8px, 6px) scale(0.99);
+  }
+}
+
+/* --- Flowing energy pulse along the paths --- */
+.glowing-paths__pulse-fast {
+  stroke-dasharray: 40 400;
+  animation: energy-pulse-fast 9s linear infinite;
+}
+
+@keyframes energy-pulse-fast {
+  0% {
+    stroke-dashoffset: 440;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* --- Responsiveness: Mobile and Tablet Optimizations --- */
+@media (max-width: 992px) {
+  .glowing-paths__middle,
+  .glowing-paths__bottom {
+    opacity: 0.5;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Completely hide middle and bottom crossover paths on mobile */
+  .glowing-paths__middle,
+  .glowing-paths__bottom {
+    display: none;
+  }
+
+  /* Reduce opacity of hero corner curves */
+  .glowing-paths__group--top-left,
+  .glowing-paths__group--top-right {
+    opacity: 0.35;
+  }
+
+  /* Hide flowing particles to minimize mobile CPU load */
+  .glowing-paths__particle {
+    display: none;
+  }
+
+  /* Disable float translations on mobile to keep layout stable and save battery */
+  .glowing-paths__group {
+    animation: none !important;
+  }
+}
+
+/* --- Accessibility: Respect reduced motion query --- */
+@media (prefers-reduced-motion: reduce) {
+  .glowing-paths__group {
+    animation: none !important;
+  }
+  .glowing-paths__pulse-fast {
+    animation: none !important;
+    stroke-dasharray: none !important;
+  }
+  .glowing-paths__particle {
+    display: none !important;
+  }
+  svg animate, 
+  svg animateMotion, 
+  svg animateTransform {
+    display: none !important;
+  }
+}

@@ -1,0 +1,220 @@
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: 84px 24px 96px;
+  background-color: #ffffff;
+}
+
+/* ---- Dynamic DotGrid background ---- */
+.hero__dotgrid {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: auto;
+  z-index: 0;
+}
+
+.hero__blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(85px);
+  will-change: transform;
+}
+
+.hero__blob--a {
+  width: 440px;
+  height: 440px;
+  top: -140px;
+  left: -80px;
+  background: radial-gradient(circle, rgba(30, 54, 116, 0.09), transparent 70%);
+  animation: float-a 14s ease-in-out infinite alternate;
+}
+
+.hero__blob--b {
+  width: 380px;
+  height: 380px;
+  top: 40px;
+  right: -90px;
+  background: radial-gradient(circle, rgba(52, 89, 163, 0.08), transparent 70%);
+  animation: float-b 17s ease-in-out infinite alternate;
+}
+
+.hero__blob--c {
+  width: 300px;
+  height: 300px;
+  bottom: -40px;
+  left: 32%;
+  background: radial-gradient(circle, rgba(201, 165, 72, 0.06), transparent 70%);
+  animation: float-c 12s ease-in-out infinite alternate;
+}
+
+@keyframes float-a {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(28px, 32px) scale(1.04); }
+  100% { transform: translate(-16px, 48px) scale(0.98); }
+}
+
+@keyframes float-b {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-28px, 24px) scale(1.05); }
+  100% { transform: translate(14px, -18px) scale(0.96); }
+}
+
+@keyframes float-c {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(22px, -20px) scale(1.06); }
+  100% { transform: translate(-18px, -10px) scale(0.95); }
+}
+
+.hero__content {
+  position: relative;
+  z-index: 1;
+  max-width: 880px;
+  margin: 0 auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hero__eyebrow {
+  color: var(--gold-600);
+  margin-bottom: 22px;
+}
+
+.hero__heading {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2.6rem, 6vw, 4.2rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0 0 16px;
+}
+
+.hero__heading-accent {
+  color: var(--red-500);
+}
+
+.hero__subtitle {
+  font-size: 1.08rem;
+  color: var(--slate-500);
+  margin: 0 0 24px;
+}
+
+/* ---- Live activity badge ---- */
+.hero__live {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 48px;
+}
+
+.hero__live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--red-500);
+  box-shadow: 0 0 0 rgba(210, 31, 43, 0.5);
+  animation: live-pulse 2.2s ease-out infinite;
+}
+
+@keyframes live-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(210, 31, 43, 0.45); }
+  70% { box-shadow: 0 0 0 8px rgba(210, 31, 43, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(210, 31, 43, 0); }
+}
+
+.hero__live-text {
+  font-size: 0.86rem;
+  color: var(--slate-600);
+}
+
+.hero__live-text strong {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.hero__cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+  width: 100%;
+  max-width: 680px;
+}
+
+/* ---- Action cards ---- */
+.action-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: 6px;
+  padding: 30px 28px;
+  border-radius: var(--radius-lg);
+  background: #ffffff;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-md);
+  transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+.action-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-lg);
+  border-color: rgba(30, 54, 116, 0.3);
+}
+
+.action-card__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(30, 54, 116, 0.08);
+  color: var(--emerald-600);
+  margin-bottom: 6px;
+}
+
+/* Lost card (first) gets the small red "lost indicator" accent;
+   Found card (second) gets the secondary blue accent. */
+.hero__cards .action-card:first-child .action-card__icon {
+  background: rgba(210, 31, 43, 0.12);
+  color: var(--red-500);
+}
+
+.hero__cards .action-card:last-child .action-card__icon {
+  background: rgba(52, 89, 163, 0.12);
+  color: var(--blue-500);
+}
+
+.action-card__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.14rem;
+  color: var(--ink);
+  margin: 0;
+}
+
+.action-card__desc {
+  font-size: 0.87rem;
+  line-height: 1.5;
+  color: var(--slate-500);
+  margin: 0 0 14px;
+}
+
+.action-card__cta {
+  width: 100%;
+  margin-top: auto;
+}
+
+@media (max-width: 620px) {
+  .hero__cards {
+    grid-template-columns: 1fr;
+  }
+}
