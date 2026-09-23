@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   FileText,
@@ -7,23 +7,24 @@ import {
   HandCoins,
   CheckCircle2,
   ArrowRight,
-  ShieldAlert,
   Activity,
-  AlertTriangle,
   Eye,
   Sparkles,
-  Users,
   Check,
   X as XIcon,
   ChevronRight,
-  BarChart2,
 } from "lucide-react";
-import StatCard from "../../components/StatCard.jsx";
 import Badge from "../../components/Badge.jsx";
-import AdminCharts from "../../components/admin/AdminCharts.jsx";
+import {
+  ActivityWaveChart,
+  StatusDonutChart,
+  CampusHotspotsCard,
+  CalendarWeekStrip,
+} from "../../components/admin/AdminCharts.jsx";
 import ItemDetailsModal from "../../components/admin/ItemDetailsModal.jsx";
 import MarkFoundModal from "../../components/admin/MarkFoundModal.jsx";
 import MatchCompareModal from "../../components/admin/MatchCompareModal.jsx";
+import AdminSyncBadge from "../../components/admin/AdminSyncBadge.jsx";
 import { useAdmin } from "../../context/AdminContext.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 
@@ -39,9 +40,16 @@ export default function AdminOverview() {
     markAsFound,
     markAsReturned,
     confirmMatch,
+    rejectMatch,
+    deleteReport,
+    refreshAdminData,
   } = useAdmin();
 
   const { user } = useAuth();
+
+  useEffect(() => {
+    refreshAdminData();
+  }, [refreshAdminData]);
 
   const [selectedItem, setSelectedItem] = useState(null);
   const [markFoundTarget, setMarkFoundTarget] = useState(null);
@@ -64,43 +72,84 @@ export default function AdminOverview() {
   const adminName = user?.name || "Administrator";
 
   return (
-    <div className="dash-overview-container" style={{ maxWidth: "1400px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "24px" }}>
+    <div
+      className="admin-overview"
+      style={{
+        maxWidth: "1400px",
+        margin: "0 auto",
+        display: "flex",
+        flexDirection: "column",
+        gap: "22px",
+        animation: "dashPageFadeIn 0.75s cubic-bezier(0.16, 1, 0.3, 1) both",
+      }}
+    >
       {/* PAGE HEADER */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "16px",
+        }}
+      >
         <div>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--ink)", margin: "0 0 4px", letterSpacing: "-0.02em" }}>
+          <h1
+            style={{
+              fontSize: "1.5rem",
+              fontWeight: 800,
+              color: "#0f172a",
+              margin: "0 0 4px",
+              letterSpacing: "-0.02em",
+            }}
+          >
             Admin Overview
           </h1>
-          <p style={{ fontSize: "0.85rem", color: "var(--slate-500)", margin: 0 }}>
+          <p style={{ fontSize: "0.86rem", color: "#64748b", margin: 0 }}>
             Real-time management overview of campus lost &amp; found items, verification queues, and system activity.
           </p>
         </div>
 
-        {/* Live system status pill */}
-        <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "#ffffff", padding: "6px 14px", borderRadius: "20px", border: "1px solid var(--border-light)", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
-          <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#10b981", display: "inline-block", boxShadow: "0 0 0 3px rgba(16, 185, 129, 0.2)" }}></span>
-          <span style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--slate-600)" }}>System Operational</span>
-          <span style={{ fontSize: "0.72rem", color: "var(--slate-400)" }}>•</span>
-          <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "#2a81f3" }}>{adminName}</span>
+        {/* Live system status and sync controls */}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+          <AdminSyncBadge />
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              background: "rgba(255, 255, 255, 0.9)",
+              padding: "6px 14px",
+              borderRadius: "999px",
+              border: "1px solid rgba(139, 92, 246, 0.18)",
+              boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
+            }}
+          >
+            <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "#7c3aed" }}>
+              {adminName}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* TOP ROW: ONLY 3 MAIN KPI STAT COUNTERS (Lost | Found | Pending) */}
+      {/* TOP ROW: 3 MAIN KPI STAT COUNTERS (Lost | Found | Pending) */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-          gap: "16px",
+          gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+          gap: "18px",
         }}
       >
         {/* 1. LOST COUNTER */}
         <div
           style={{
-            background: "#ffffff",
-            border: "1px solid var(--border-light)",
-            borderRadius: "12px",
+            background: "rgba(255, 255, 255, 0.85)",
+            border: "1px solid rgba(139, 92, 246, 0.14)",
+            borderRadius: "16px",
             padding: "20px 22px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+            boxShadow: "0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.03)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
             display: "flex",
             flexDirection: "column",
             gap: "12px",
@@ -109,22 +158,63 @@ export default function AdminOverview() {
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--slate-500)" }}>
+            <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "#64748b" }}>
               Lost Items
             </span>
-            <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "rgba(239, 68, 68, 0.1)", color: "#ef4444", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div
+              style={{
+                width: "36px",
+                height: "36px",
+                borderRadius: "10px",
+                background: "#fff1f2",
+                color: "#e11d48",
+                border: "1px solid #fecdd3",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
               <FileText size={18} />
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
-            <span style={{ fontSize: "2rem", fontWeight: 800, color: "var(--ink)", lineHeight: 1, letterSpacing: "-0.03em" }}>
+            <span
+              style={{
+                fontSize: "2.1rem",
+                fontWeight: 800,
+                color: "#0f172a",
+                lineHeight: 1,
+                letterSpacing: "-0.03em",
+              }}
+            >
               {stats.totalLost ?? items.filter((i) => i.type === "lost").length}
             </span>
-            <span style={{ fontSize: "0.75rem", color: "var(--slate-400)", fontWeight: 500 }}>reported</span>
+            <span style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 500 }}>
+              reported
+            </span>
           </div>
-          <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: "8px", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.75rem" }}>
-            <span style={{ color: "var(--slate-500)" }}>Total Lost registry</span>
-            <Link to="/admin/reports" style={{ color: "#2a81f3", textDecoration: "none", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "2px" }}>
+          <div
+            style={{
+              borderTop: "1px solid rgba(139, 92, 246, 0.1)",
+              paddingTop: "10px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              fontSize: "0.75rem",
+            }}
+          >
+            <span style={{ color: "#64748b" }}>Total Lost registry</span>
+            <Link
+              to="/admin/reports"
+              style={{
+                color: "#7c3aed",
+                textDecoration: "none",
+                fontWeight: 600,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "2px",
+              }}
+            >
               View <ChevronRight size={12} />
             </Link>
           </div>
@@ -133,11 +223,13 @@ export default function AdminOverview() {
         {/* 2. FOUND COUNTER */}
         <div
           style={{
-            background: "#ffffff",
-            border: "1px solid var(--border-light)",
-            borderRadius: "12px",
+            background: "rgba(255, 255, 255, 0.85)",
+            border: "1px solid rgba(139, 92, 246, 0.14)",
+            borderRadius: "16px",
             padding: "20px 22px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+            boxShadow: "0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.03)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
             display: "flex",
             flexDirection: "column",
             gap: "12px",
@@ -146,22 +238,66 @@ export default function AdminOverview() {
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--slate-500)" }}>
+            <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "#64748b" }}>
               Found Items
             </span>
-            <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "rgba(42, 129, 243, 0.1)", color: "#2a81f3", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div
+              style={{
+                width: "36px",
+                height: "36px",
+                borderRadius: "10px",
+                background: "#ecfdf5",
+                color: "#059669",
+                border: "1px solid #a7f3d0",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
               <ShieldCheck size={18} />
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
-            <span style={{ fontSize: "2rem", fontWeight: 800, color: "var(--ink)", lineHeight: 1, letterSpacing: "-0.03em" }}>
+            <span
+              style={{
+                fontSize: "2.1rem",
+                fontWeight: 800,
+                color: "#0f172a",
+                lineHeight: 1,
+                letterSpacing: "-0.03em",
+              }}
+            >
               {stats.totalFound ?? items.filter((i) => i.type === "found").length}
             </span>
-            <span style={{ fontSize: "0.75rem", color: "var(--slate-400)", fontWeight: 500 }}>in custody</span>
+            <span style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 500 }}>
+              in custody
+            </span>
           </div>
-          <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: "8px", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.75rem" }}>
-            <span style={{ color: "var(--slate-500)" }}>Resolved items: <strong style={{ color: "#10b981" }}>{stats.resolvedCount || 0}</strong></span>
-            <Link to="/admin/reports" style={{ color: "#2a81f3", textDecoration: "none", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "2px" }}>
+          <div
+            style={{
+              borderTop: "1px solid rgba(139, 92, 246, 0.1)",
+              paddingTop: "10px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              fontSize: "0.75rem",
+            }}
+          >
+            <span style={{ color: "#64748b" }}>
+              Resolved items:{" "}
+              <strong style={{ color: "#059669" }}>{stats.resolvedCount || 0}</strong>
+            </span>
+            <Link
+              to="/admin/reports"
+              style={{
+                color: "#7c3aed",
+                textDecoration: "none",
+                fontWeight: 600,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "2px",
+              }}
+            >
               View <ChevronRight size={12} />
             </Link>
           </div>
@@ -170,11 +306,13 @@ export default function AdminOverview() {
         {/* 3. PENDING COUNTER */}
         <div
           style={{
-            background: "#ffffff",
-            border: "1px solid var(--border-light)",
-            borderRadius: "12px",
+            background: "rgba(255, 255, 255, 0.85)",
+            border: "1px solid rgba(139, 92, 246, 0.14)",
+            borderRadius: "16px",
             padding: "20px 22px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+            boxShadow: "0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.03)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
             display: "flex",
             flexDirection: "column",
             gap: "12px",
@@ -183,155 +321,211 @@ export default function AdminOverview() {
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--slate-500)" }}>
+            <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "#64748b" }}>
               Pending Moderation
             </span>
-            <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "rgba(245, 158, 11, 0.12)", color: "#d97706", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div
+              style={{
+                width: "36px",
+                height: "36px",
+                borderRadius: "10px",
+                background: "#fffbeb",
+                color: "#d97706",
+                border: "1px solid #fde68a",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
               <Clock size={18} />
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
-            <span style={{ fontSize: "2rem", fontWeight: 800, color: "var(--ink)", lineHeight: 1, letterSpacing: "-0.03em" }}>
+            <span
+              style={{
+                fontSize: "2.1rem",
+                fontWeight: 800,
+                color: "#0f172a",
+                lineHeight: 1,
+                letterSpacing: "-0.03em",
+              }}
+            >
               {pendingItems.length}
             </span>
-            <span style={{ fontSize: "0.75rem", color: "#d97706", fontWeight: 600 }}>awaiting review</span>
+            <span style={{ fontSize: "0.75rem", color: "#d97706", fontWeight: 700 }}>
+              awaiting review
+            </span>
           </div>
-          <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: "8px", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.75rem" }}>
-            <span style={{ color: "var(--slate-500)" }}>Approval queue</span>
-            <Link to="/admin/pending" style={{ color: "#d97706", textDecoration: "none", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "2px" }}>
+          <div
+            style={{
+              borderTop: "1px solid rgba(139, 92, 246, 0.1)",
+              paddingTop: "10px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              fontSize: "0.75rem",
+            }}
+          >
+            <span style={{ color: "#64748b" }}>Approval queue</span>
+            <Link
+              to="/admin/pending"
+              style={{
+                color: "#d97706",
+                textDecoration: "none",
+                fontWeight: 600,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "2px",
+              }}
+            >
               Moderate <ChevronRight size={12} />
             </Link>
           </div>
         </div>
       </div>
 
-      {/* MAIN TWO-COLUMN BALANCED GRID */}
+      {/* MAIN TWO-COLUMN BALANCED GRID (Matching Reference Image 1) */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "minmax(0, 1.65fr) minmax(0, 1fr)",
+          gridTemplateColumns: "minmax(0, 1.62fr) minmax(0, 1fr)",
           gap: "20px",
           alignItems: "start",
         }}
       >
-        {/* LEFT COLUMN: Pending Moderation Queue + Intelligence Charts */}
+        {/* LEFT COLUMN: Main Activity Wave Chart + Calendar & Moderation Hub */}
         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          {/* Pending Moderation Queue */}
+          {/* 1. Main Wave & Trend Chart Card */}
+          <ActivityWaveChart />
+
+          {/* 2. Calendar Week Strip + Moderation Queue Card */}
           <div
             style={{
-              background: "#ffffff",
-              borderRadius: "12px",
-              border: "1px solid var(--border-light)",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-              padding: "20px",
+              background: "rgba(255, 255, 255, 0.9)",
+              borderRadius: "18px",
+              border: "1px solid rgba(139, 92, 246, 0.16)",
+              boxShadow: "0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.03)",
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
+              padding: "20px 22px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px",
             }}
           >
+            {/* Calendar Weekday Strip (matching Reference Image bottom-left calendar) */}
+            <CalendarWeekStrip />
+
+            {/* Moderation Queue Section */}
             <div
               style={{
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                marginBottom: "16px",
-                paddingBottom: "12px",
-                borderBottom: "1px solid #f1f5f9",
+                borderTop: "1px solid rgba(139, 92, 246, 0.1)",
+                paddingTop: "14px",
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <h2 style={{ fontSize: "1.05rem", fontWeight: 700, color: "var(--ink)", margin: 0 }}>
+                <h3 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800, color: "#0f172a" }}>
                   Pending Moderation Queue
-                </h2>
+                </h3>
                 <span
                   style={{
-                    background: pendingItems.length > 0 ? "#fef3c7" : "#f1f5f9",
-                    color: pendingItems.length > 0 ? "#92400e" : "#64748b",
+                    background: pendingItems.length > 0 ? "#fef3c7" : "#ecfdf5",
+                    color: pendingItems.length > 0 ? "#b45309" : "#059669",
+                    border: pendingItems.length > 0 ? "1px solid #fde68a" : "1px solid #a7f3d0",
                     fontSize: "0.72rem",
-                    fontWeight: 700,
+                    fontWeight: 800,
                     padding: "2px 8px",
                     borderRadius: "12px",
                   }}
                 >
-                  {pendingItems.length}
+                  {pendingItems.length} awaiting
                 </span>
               </div>
               <Link
                 to="/admin/pending"
                 style={{
                   fontSize: "0.8rem",
-                  fontWeight: 600,
-                  color: "#2a81f3",
+                  fontWeight: 700,
+                  color: "#7c3aed",
                   textDecoration: "none",
                   display: "inline-flex",
                   alignItems: "center",
-                  gap: "4px",
+                  gap: "3px",
                 }}
               >
                 View all <ArrowRight size={13} />
               </Link>
             </div>
 
-            {/* List of Pending Items */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px", maxHeight: "310px", overflowY: "auto", paddingRight: "4px" }}>
-              {pendingItems.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "32px 16px", color: "var(--slate-500)" }}>
-                  <ShieldCheck size={36} color="#10b981" style={{ margin: "0 auto 8px", display: "block" }} />
-                  <p style={{ margin: "0 0 2px", fontWeight: 600, fontSize: "0.9rem", color: "var(--ink)" }}>Queue Clear!</p>
-                  <p style={{ margin: 0, fontSize: "0.78rem" }}>All submitted items have been reviewed.</p>
+            {/* Moderation Items or Clean Queue Clear State */}
+            {pendingItems.length === 0 ? (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "12px",
+                  padding: "20px",
+                  background: "#f8f9fe",
+                  borderRadius: "12px",
+                  border: "1px solid rgba(139, 92, 246, 0.1)",
+                }}
+              >
+                <ShieldCheck size={28} color="#10b981" />
+                <div>
+                  <div style={{ fontSize: "0.92rem", fontWeight: 800, color: "#0f172a" }}>
+                    Queue Clear!
+                  </div>
+                  <div style={{ fontSize: "0.78rem", color: "#64748b" }}>
+                    All student lost &amp; found submissions have been reviewed and approved.
+                  </div>
                 </div>
-              ) : (
-                pendingItems.map((item) => (
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px", maxHeight: "260px", overflowY: "auto", paddingRight: "4px" }}>
+                {pendingItems.slice(0, 4).map((item) => (
                   <div
                     key={item.id}
                     style={{
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
-                      padding: "12px 14px",
-                      background: "#f8fafc",
-                      border: "1px solid var(--border-light)",
-                      borderRadius: "10px",
+                      padding: "10px 14px",
+                      background: "#ffffff",
+                      border: "1px solid rgba(139, 92, 246, 0.12)",
+                      borderRadius: "12px",
                       gap: "12px",
-                      transition: "background 0.15s ease",
+                      boxShadow: "0 1px 3px rgba(15, 23, 42, 0.03)",
                     }}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0, flex: 1 }}>
                       <Badge status={item.type} />
                       <div style={{ minWidth: 0 }}>
-                        <div
-                          style={{
-                            fontSize: "0.85rem",
-                            fontWeight: 700,
-                            color: "var(--ink)",
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                          }}
-                        >
+                        <div style={{ fontSize: "0.86rem", fontWeight: 700, color: "#0f172a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                           {item.title}
                         </div>
-                        <div style={{ fontSize: "0.74rem", color: "var(--slate-500)", marginTop: "2px" }}>
+                        <div style={{ fontSize: "0.74rem", color: "#64748b" }}>
                           By {item.reporter || "Student"} • {item.location || "Campus"}
                         </div>
                       </div>
                     </div>
-
-                    {/* Quick action buttons */}
                     <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
                       <button
                         type="button"
                         onClick={() => setSelectedItem(item)}
                         title="View Details"
                         style={{
-                          background: "#ffffff",
-                          border: "1px solid var(--border-light)",
-                          borderRadius: "6px",
-                          padding: "5px 8px",
-                          color: "var(--slate-600)",
+                          background: "#f8f9fe",
+                          border: "1px solid rgba(139, 92, 246, 0.2)",
+                          borderRadius: "8px",
+                          padding: "6px 8px",
+                          color: "#334155",
                           cursor: "pointer",
                           display: "inline-flex",
                           alignItems: "center",
-                          gap: "4px",
-                          fontSize: "0.75rem",
-                          fontWeight: 600,
                         }}
                       >
                         <Eye size={13} />
@@ -339,73 +533,64 @@ export default function AdminOverview() {
                       <button
                         type="button"
                         onClick={() => approveReport(item.id)}
-                        title="Approve Report"
                         style={{
-                          background: "#10b981",
+                          background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
                           border: "none",
-                          borderRadius: "6px",
-                          padding: "5px 10px",
+                          borderRadius: "8px",
+                          padding: "6px 12px",
                           color: "#ffffff",
                           cursor: "pointer",
                           display: "inline-flex",
                           alignItems: "center",
                           gap: "4px",
-                          fontSize: "0.75rem",
+                          fontSize: "0.74rem",
                           fontWeight: 700,
                         }}
                       >
-                        <Check size={13} strokeWidth={3} /> Approve
+                        <Check size={12} strokeWidth={3} /> Approve
                       </button>
                       <button
                         type="button"
                         onClick={() => rejectReport(item.id)}
-                        title="Reject Report"
                         style={{
-                          background: "#ffffff",
-                          border: "1px solid #fee2e2",
-                          borderRadius: "6px",
-                          padding: "5px 8px",
-                          color: "#ef4444",
+                          background: "#fee2e2",
+                          border: "1px solid #fca5a5",
+                          borderRadius: "8px",
+                          padding: "6px 8px",
+                          color: "#dc2626",
                           cursor: "pointer",
                           display: "inline-flex",
                           alignItems: "center",
-                          fontSize: "0.75rem",
-                          fontWeight: 600,
                         }}
                       >
-                        <XIcon size={13} strokeWidth={2.5} />
+                        <XIcon size={12} strokeWidth={2.5} />
                       </button>
                     </div>
                   </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Lost & Found Intelligence Charts */}
-          <div
-            style={{
-              background: "#ffffff",
-              borderRadius: "12px",
-              border: "1px solid var(--border-light)",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-              padding: "20px",
-            }}
-          >
-            <AdminCharts />
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Attention & Verification Hub + Live System Activity */}
+        {/* RIGHT COLUMN: Donut Distribution + Hotspots + Verification Hub + Activity */}
         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          {/* Attention & Verification Hub */}
+          {/* 1. Item Status Donut Distribution (Reference Image "Top Product Sale") */}
+          <StatusDonutChart />
+
+          {/* 2. Campus Hotspots (Reference Image "Traffic Source") */}
+          <CampusHotspotsCard />
+
+          {/* 3. Requires Attention & Verification Hub */}
           <div
             style={{
-              background: "#ffffff",
-              borderRadius: "12px",
-              border: "1px solid var(--border-light)",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-              padding: "20px",
+              background: "rgba(255, 255, 255, 0.9)",
+              borderRadius: "18px",
+              border: "1px solid rgba(139, 92, 246, 0.16)",
+              boxShadow: "0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.03)",
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
+              padding: "20px 22px",
             }}
           >
             <div
@@ -415,13 +600,15 @@ export default function AdminOverview() {
                 alignItems: "center",
                 marginBottom: "14px",
                 paddingBottom: "10px",
-                borderBottom: "1px solid #f1f5f9",
+                borderBottom: "1px solid rgba(139, 92, 246, 0.1)",
               }}
             >
-              <h2 style={{ fontSize: "1.05rem", fontWeight: 700, color: "var(--ink)", margin: 0 }}>
+              <h3 style={{ fontSize: "1.08rem", fontWeight: 800, color: "#0f172a", margin: 0 }}>
                 Requires Attention
-              </h2>
-              <span style={{ fontSize: "0.72rem", color: "var(--slate-400)", fontWeight: 600 }}>Active items</span>
+              </h3>
+              <span style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: 600 }}>
+                Active Queues
+              </span>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
@@ -432,23 +619,36 @@ export default function AdminOverview() {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  padding: "12px 14px",
-                  background: "#f8fafc",
-                  borderRadius: "10px",
-                  border: "1px solid var(--border-light)",
+                  padding: "11px 14px",
+                  background: "#ffffff",
+                  borderRadius: "12px",
+                  border: "1px solid rgba(139, 92, 246, 0.12)",
                   textDecoration: "none",
-                  transition: "border-color 0.2s ease, background 0.2s ease",
+                  boxShadow: "0 1px 3px rgba(15, 23, 42, 0.03)",
+                  transition: "all 0.15s ease",
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <div style={{ width: "34px", height: "34px", borderRadius: "8px", background: "rgba(42, 129, 243, 0.12)", color: "#2a81f3", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div
+                    style={{
+                      width: "34px",
+                      height: "34px",
+                      borderRadius: "10px",
+                      background: "#f5f3ff",
+                      color: "#7c3aed",
+                      border: "1px solid rgba(124, 58, 237, 0.2)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
                     <HandCoins size={16} />
                   </div>
                   <div>
-                    <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--ink)" }}>
+                    <div style={{ fontSize: "0.86rem", fontWeight: 700, color: "#0f172a" }}>
                       Claims Verification
                     </div>
-                    <div style={{ fontSize: "0.72rem", color: "var(--slate-500)" }}>
+                    <div style={{ fontSize: "0.72rem", color: "#64748b" }}>
                       Ownership proof submissions
                     </div>
                   </div>
@@ -456,18 +656,18 @@ export default function AdminOverview() {
                 <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                   <span
                     style={{
-                      background: pendingClaims.length > 0 ? "#eff6ff" : "#f1f5f9",
-                      color: pendingClaims.length > 0 ? "#1d4ed8" : "#64748b",
+                      background: pendingClaims.length > 0 ? "#f5f3ff" : "#f1f5f9",
+                      color: pendingClaims.length > 0 ? "#7c3aed" : "#64748b",
                       fontSize: "0.75rem",
                       fontWeight: 800,
                       padding: "2px 8px",
                       borderRadius: "12px",
-                      border: pendingClaims.length > 0 ? "1px solid #bfdbfe" : "none",
+                      border: pendingClaims.length > 0 ? "1px solid rgba(124, 58, 237, 0.25)" : "none",
                     }}
                   >
                     {pendingClaims.length}
                   </span>
-                  <ChevronRight size={14} color="var(--slate-400)" />
+                  <ChevronRight size={14} color="#94a3b8" />
                 </div>
               </Link>
 
@@ -478,23 +678,36 @@ export default function AdminOverview() {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  padding: "12px 14px",
-                  background: "#f8fafc",
-                  borderRadius: "10px",
-                  border: "1px solid var(--border-light)",
+                  padding: "11px 14px",
+                  background: "#ffffff",
+                  borderRadius: "12px",
+                  border: "1px solid rgba(139, 92, 246, 0.12)",
                   textDecoration: "none",
-                  transition: "border-color 0.2s ease, background 0.2s ease",
+                  boxShadow: "0 1px 3px rgba(15, 23, 42, 0.03)",
+                  transition: "all 0.15s ease",
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <div style={{ width: "34px", height: "34px", borderRadius: "8px", background: "rgba(16, 185, 129, 0.12)", color: "#10b981", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div
+                    style={{
+                      width: "34px",
+                      height: "34px",
+                      borderRadius: "10px",
+                      background: "#ecfdf5",
+                      color: "#059669",
+                      border: "1px solid rgba(5, 150, 105, 0.2)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
                     <Sparkles size={16} />
                   </div>
                   <div>
-                    <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--ink)" }}>
+                    <div style={{ fontSize: "0.86rem", fontWeight: 700, color: "#0f172a" }}>
                       Smart Matches
                     </div>
-                    <div style={{ fontSize: "0.72rem", color: "var(--slate-500)" }}>
+                    <div style={{ fontSize: "0.72rem", color: "#64748b" }}>
                       AI correlated Lost &amp; Found
                     </div>
                   </div>
@@ -503,41 +716,54 @@ export default function AdminOverview() {
                   <span
                     style={{
                       background: unconfirmedMatches.length > 0 ? "#ecfdf5" : "#f1f5f9",
-                      color: unconfirmedMatches.length > 0 ? "#047857" : "#64748b",
+                      color: unconfirmedMatches.length > 0 ? "#059669" : "#64748b",
                       fontSize: "0.75rem",
                       fontWeight: 800,
                       padding: "2px 8px",
                       borderRadius: "12px",
-                      border: unconfirmedMatches.length > 0 ? "1px solid #a7f3d0" : "none",
+                      border: unconfirmedMatches.length > 0 ? "1px solid rgba(5, 150, 105, 0.25)" : "none",
                     }}
                   >
                     {unconfirmedMatches.length}
                   </span>
-                  <ChevronRight size={14} color="var(--slate-400)" />
+                  <ChevronRight size={14} color="#94a3b8" />
                 </div>
               </Link>
 
-              {/* Resolved Items notification item */}
+              {/* Resolved Items item */}
               <div
                 style={{
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  padding: "12px 14px",
-                  background: "#f8fafc",
-                  borderRadius: "10px",
-                  border: "1px solid var(--border-light)",
+                  padding: "11px 14px",
+                  background: "#ffffff",
+                  borderRadius: "12px",
+                  border: "1px solid rgba(139, 92, 246, 0.12)",
+                  boxShadow: "0 1px 3px rgba(15, 23, 42, 0.03)",
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <div style={{ width: "34px", height: "34px", borderRadius: "8px", background: "rgba(245, 158, 11, 0.12)", color: "#d97706", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div
+                    style={{
+                      width: "34px",
+                      height: "34px",
+                      borderRadius: "10px",
+                      background: "#fffbeb",
+                      color: "#d97706",
+                      border: "1px solid rgba(217, 119, 6, 0.2)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
                     <CheckCircle2 size={16} />
                   </div>
                   <div>
-                    <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--ink)" }}>
+                    <div style={{ fontSize: "0.86rem", fontWeight: 700, color: "#0f172a" }}>
                       Reunited &amp; Resolved
                     </div>
-                    <div style={{ fontSize: "0.72rem", color: "var(--slate-500)" }}>
+                    <div style={{ fontSize: "0.72rem", color: "#64748b" }}>
                       Overall recovery rate: {stats.recoveryRate || 0}%
                     </div>
                   </div>
@@ -545,13 +771,13 @@ export default function AdminOverview() {
                 <div>
                   <span
                     style={{
-                      background: "#fef3c7",
-                      color: "#92400e",
+                      background: "#fffbeb",
+                      color: "#d97706",
                       fontSize: "0.75rem",
                       fontWeight: 800,
                       padding: "2px 8px",
                       borderRadius: "12px",
-                      border: "1px solid #fde68a",
+                      border: "1px solid rgba(217, 119, 6, 0.25)",
                     }}
                   >
                     {stats.resolvedCount || 0}
@@ -561,14 +787,16 @@ export default function AdminOverview() {
             </div>
           </div>
 
-          {/* System Activity Feed */}
+          {/* 4. Live System Activity Feed */}
           <div
             style={{
-              background: "#ffffff",
-              borderRadius: "12px",
-              border: "1px solid var(--border-light)",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-              padding: "20px",
+              background: "rgba(255, 255, 255, 0.9)",
+              borderRadius: "18px",
+              border: "1px solid rgba(139, 92, 246, 0.16)",
+              boxShadow: "0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.03)",
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
+              padding: "20px 22px",
             }}
           >
             <div
@@ -578,36 +806,45 @@ export default function AdminOverview() {
                 alignItems: "center",
                 marginBottom: "14px",
                 paddingBottom: "10px",
-                borderBottom: "1px solid #f1f5f9",
+                borderBottom: "1px solid rgba(139, 92, 246, 0.1)",
                 flexWrap: "wrap",
                 gap: "8px",
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <Activity size={16} color="#2a81f3" />
-                <h2 style={{ fontSize: "1.05rem", fontWeight: 700, color: "var(--ink)", margin: 0 }}>
+                <Activity size={16} color="#7c3aed" />
+                <h3 style={{ fontSize: "1.08rem", fontWeight: 800, color: "#0f172a", margin: 0 }}>
                   System Activity
-                </h2>
+                </h3>
               </div>
 
               {/* Activity Filter Buttons */}
-              <div style={{ display: "flex", background: "#f1f5f9", borderRadius: "6px", padding: "2px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  background: "#f1f5f9",
+                  borderRadius: "8px",
+                  padding: "2px",
+                  border: "1px solid #e2e8f0",
+                }}
+              >
                 {["all", "report", "claim"].map((f) => (
                   <button
                     key={f}
                     type="button"
                     onClick={() => setActivityFilter(f)}
                     style={{
-                      background: activityFilter === f ? "#ffffff" : "transparent",
-                      color: activityFilter === f ? "var(--ink)" : "var(--slate-500)",
+                      background: activityFilter === f ? "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)" : "transparent",
+                      color: activityFilter === f ? "#ffffff" : "#64748b",
                       border: "none",
-                      borderRadius: "4px",
+                      borderRadius: "6px",
                       padding: "3px 8px",
-                      fontSize: "0.7rem",
+                      fontSize: "0.72rem",
                       fontWeight: 700,
                       textTransform: "capitalize",
                       cursor: "pointer",
-                      boxShadow: activityFilter === f ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+                      boxShadow: activityFilter === f ? "0 2px 6px rgba(124, 58, 237, 0.3)" : "none",
+                      transition: "all 0.15s ease",
                     }}
                   >
                     {f}
@@ -617,54 +854,65 @@ export default function AdminOverview() {
             </div>
 
             {/* Activity List */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "310px", overflowY: "auto", paddingRight: "4px" }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "8px",
+                maxHeight: "220px",
+                overflowY: "auto",
+                paddingRight: "4px",
+              }}
+            >
               {filteredActivities.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "24px 10px", color: "var(--slate-500)", fontSize: "0.8rem" }}>
+                <div style={{ textAlign: "center", padding: "20px 10px", color: "#64748b", fontSize: "0.82rem" }}>
                   No recent activity recorded.
                 </div>
               ) : (
-                filteredActivities.map((act) => (
+                filteredActivities.slice(0, 5).map((act) => (
                   <div
                     key={act.id}
                     style={{
                       display: "flex",
                       alignItems: "flex-start",
                       gap: "10px",
-                      padding: "9px 11px",
-                      background: "#f8fafc",
-                      borderRadius: "8px",
-                      border: "1px solid var(--border-light)",
-                      fontSize: "0.78rem",
+                      padding: "10px 12px",
+                      background: "#ffffff",
+                      borderRadius: "10px",
+                      border: "1px solid rgba(139, 92, 246, 0.08)",
+                      boxShadow: "0 1px 2px rgba(15, 23, 42, 0.02)",
+                      fontSize: "0.8rem",
                     }}
                   >
                     <div
                       style={{
-                        width: "24px",
-                        height: "24px",
+                        width: "26px",
+                        height: "26px",
                         borderRadius: "50%",
-                        background: "rgba(42, 129, 243, 0.12)",
-                        color: "#2a81f3",
+                        background: "#f5f3ff",
+                        color: "#7c3aed",
+                        border: "1px solid rgba(124, 58, 237, 0.2)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         flexShrink: 0,
                         marginTop: "1px",
-                        fontSize: "0.7rem",
+                        fontSize: "0.72rem",
                         fontWeight: 700,
                       }}
                     >
                       {act.user ? act.user[0].toUpperCase() : "U"}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ color: "var(--ink)", lineHeight: 1.35 }}>
+                      <div style={{ color: "#1e293b", lineHeight: 1.35 }}>
                         <strong>{act.user}</strong> {act.action}{" "}
                         {act.item && (
-                          <span style={{ color: "#2a81f3", fontWeight: 600 }}>
+                          <span style={{ color: "#7c3aed", fontWeight: 600 }}>
                             "{act.item}"
                           </span>
                         )}
                       </div>
-                      <span style={{ fontSize: "0.68rem", color: "var(--slate-400)", display: "block", marginTop: "2px" }}>
+                      <span style={{ fontSize: "0.68rem", color: "#94a3b8", display: "block", marginTop: "2px" }}>
                         {act.time}
                       </span>
                     </div>
@@ -688,6 +936,7 @@ export default function AdminOverview() {
           setMarkFoundTarget(items.find((i) => i.id === id));
         }}
         onMarkReturned={markAsReturned}
+        onDeleteReport={deleteReport}
       />
 
       <MarkFoundModal
@@ -702,9 +951,8 @@ export default function AdminOverview() {
         isOpen={Boolean(selectedMatch)}
         onClose={() => setSelectedMatch(null)}
         onConfirmMatch={confirmMatch}
+        onRejectMatch={rejectMatch}
       />
     </div>
   );
 }
-
-

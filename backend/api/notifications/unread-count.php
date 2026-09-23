@@ -1,22 +1,30 @@
 <?php
 
 require_once('../../config/cors.php');
-session_start();
 header("Content-Type: application/json");
 require_once('../../config/database.php');
+require_once('../../middleware/auth.php');
 
-if (!isset($_SESSION["user_id"])) {
-    http_response_code(401);
-    echo json_encode([
-        "success" => false,
-        "message" => "Authentication required."
-    ]);
-    exit;
+$authenticatedUser = requireAuth($conn);
+$user_id = (int)$authenticatedUser["id"];
+
+$isStudent = (($authenticatedUser["role"] ?? "student") === "student");
+
+if ($isStudent) {
+    $stmt = $conn->prepare(
+        "SELECT COUNT(*) as unread_count 
+         FROM notifications 
+         WHERE user_id = ? 
+           AND is_read = FALSE
+           AND type NOT IN ('report_created')
+           AND title NOT LIKE 'Report Submitted%'
+           AND title NOT LIKE 'Claim Submitted%'
+           AND title NOT LIKE 'New % Report%'
+           AND title NOT LIKE 'Pending Claim%'"
+    );
+} else {
+    $stmt = $conn->prepare("SELECT COUNT(*) as unread_count FROM notifications WHERE user_id = ? AND is_read = FALSE");
 }
-
-$user_id = (int)$_SESSION["user_id"];
-
-$stmt = $conn->prepare("SELECT COUNT(*) as unread_count FROM notifications WHERE user_id = ? AND is_read = FALSE");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $res = $stmt->get_result()->fetch_assoc();

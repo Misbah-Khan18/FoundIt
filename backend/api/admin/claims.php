@@ -1,29 +1,14 @@
 <?php
 
 require_once('../../config/cors.php');
-session_start();
 header("Content-Type: application/json");
 require_once('../../config/database.php');
 require_once('../../services/NotificationService.php');
+require_once('../../middleware/auth.php');
+require_once('../../middleware/csrf.php');
 
-// 1. Strict Server-Side Session & Role Authorization Check
-if (!isset($_SESSION["user_id"])) {
-    http_response_code(401);
-    echo json_encode([
-        "success" => false,
-        "message" => "Unauthorized: Authentication required."
-    ]);
-    exit;
-}
-
-if (($_SESSION["role"] ?? "") !== "admin") {
-    http_response_code(403);
-    echo json_encode([
-        "success" => false,
-        "message" => "Forbidden: Administrator privileges required."
-    ]);
-    exit;
-}
+// Strict server-side verification: authenticated + non-suspended + admin role in MySQL
+$adminId = requireAdmin($conn);
 
 $method = $_SERVER['REQUEST_METHOD'];
 
@@ -57,7 +42,7 @@ if ($method === "GET") {
                 "itemStatus" => $row["item_status"],
                 "claimantName" => $row["claimant_name"],
                 "claimantEmail" => $row["claimant_email"],
-                "claimantPhone" => $row["claimant_phone"] ?? "+91 98765 43210",
+                "claimantPhone" => !empty($row["claimant_phone"]) ? $row["claimant_phone"] : "Not provided",
                 "reporterName" => $row["reporter_name"] ?? "Student",
                 "reporterEmail" => $row["reporter_email"] ?? "",
                 "date" => date("Y-m-d", strtotime($row["claim_created_at"])),
@@ -80,17 +65,61 @@ if ($method === "GET") {
 // POST: Update claim status with MySQL Transaction Safety
 if ($method === "POST") {
     $data = json_decode(file_get_contents("php://input"), true);
+    validateCsrfToken($data);
     $claimId = (int)($data["claim_id"] ?? 0);
     $newStatus = trim($data["status"] ?? "");
 
-    if ($claimId <= 0 || !in_array($newStatus, ["approved", "rejected"])) {
+    if ($claimId <= 0 || !in_array($newStatus, ["approved", "rejected", "request_info"])) {
         http_response_code(400);
         echo json_encode([
             "success" => false,
-            "message" => "Invalid status parameters. Required: claim_id and status ('approved' or 'rejected')."
+            "message" => "Invalid status parameters. Required: claim_id and status ('approved', 'rejected', or 'request_info')."
         ]);
         $conn->close();
         exit;
+    }
+
+    // Handle 'request_info' action: notify claimant without changing DB claim status
+    if ($newStatus === "request_info") {
+        $cStmt = $conn->prepare("
+            SELECT c.claimant_id, i.title, i.id as item_id 
+            FROM claims c 
+            JOIN items i ON c.item_id = i.id 
+            WHERE c.id = ?
+        ");
+        $cStmt->bind_param("i", $claimId);
+        $cStmt->execute();
+        $cRes = $cStmt->get_result()->fetch_assoc();
+        $cStmt->close();
+
+        if ($cRes) {
+            $claimantId = (int)$cRes["claimant_id"];
+            $itemTitle = $cRes["title"];
+            $itemId = (int)$cRes["item_id"];
+
+            NotificationService::create(
+                $conn,
+                $claimantId,
+                "Additional Proof Requested: " . $itemTitle,
+                "Campus security administrators reviewed your claim on '" . $itemTitle . "' (Claim #" . $claimId . ") and have requested additional details or supporting proof of ownership.",
+                "claim_info_requested",
+                $itemId,
+                null,
+                false
+            );
+
+            echo json_encode([
+                "success" => true,
+                "message" => "Additional proof request sent to claimant successfully."
+            ]);
+            $conn->close();
+            exit;
+        } else {
+            http_response_code(404);
+            echo json_encode(["success" => false, "message" => "Claim record not found."]);
+            $conn->close();
+            exit;
+        }
     }
 
     // Begin Transaction
@@ -188,6 +217,29 @@ if ($method === "POST") {
                     true,
                     ["itemTitle" => $itemTitle]
                 );
+            }
+
+            // 3. Notify item reporter
+            $repStmt = $conn->prepare("SELECT user_id FROM items WHERE id = ?");
+            if ($repStmt) {
+                $repStmt->bind_param("i", $itemId);
+                $repStmt->execute();
+                $repRes = $repStmt->get_result()->fetch_assoc();
+                $reporterId = (int)($repRes["user_id"] ?? 0);
+                $repStmt->close();
+
+                if ($reporterId > 0 && $reporterId !== $claimantId) {
+                    NotificationService::create(
+                        $conn,
+                        $reporterId,
+                        "Claim Approved: " . $itemTitle,
+                        "A claim filed for your reported item '" . $itemTitle . "' has been verified and approved by campus administration.",
+                        "claim_approved",
+                        $itemId,
+                        $claimId,
+                        false
+                    );
+                }
             }
 
             echo json_encode([

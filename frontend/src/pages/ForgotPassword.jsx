@@ -10,6 +10,7 @@ export default function ForgotPassword() {
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [devToken, setDevToken] = useState(null);
+  const [mailSent, setMailSent] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,7 +26,8 @@ export default function ForgotPassword() {
     try {
       const res = await forgotPassword(email);
       setSubmitted(true);
-      if (res.dev_reset_token) {
+      setMailSent(Boolean(res?.mail_sent));
+      if (res?.dev_reset_token) {
         setDevToken(res.dev_reset_token);
       }
     } catch (err) {
@@ -37,7 +39,7 @@ export default function ForgotPassword() {
 
   return (
     <>
-      <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "48px", height: "48px", borderRadius: "12px", background: "rgba(30, 54, 116, 0.08)", color: "var(--navy-900)", marginBottom: "16px" }}>
+      <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "48px", height: "48px", borderRadius: "12px", background: "rgba(168, 85, 247, 0.15)", color: "#c084fc", border: "1px solid rgba(168, 85, 247, 0.3)", marginBottom: "16px", boxShadow: "0 0 15px rgba(168, 85, 247, 0.25)" }}>
         <KeyRound size={24} strokeWidth={2.2} />
       </div>
 
@@ -58,23 +60,27 @@ export default function ForgotPassword() {
             <CheckCircle2 size={24} strokeWidth={2.2} />
           </div>
 
-          <p style={{ fontSize: "0.92rem", color: "var(--ink)", lineHeight: 1.5, margin: "0 0 16px" }}>
-            If an account is associated with <strong>{email}</strong>, a secure password reset link has been dispatched.
+          <p style={{ fontSize: "0.92rem", color: "#ffffff", lineHeight: 1.5, margin: "0 0 16px" }}>
+            {mailSent ? (
+              <>A password reset link has been dispatched to <strong>{email}</strong>! Please check your inbox and spam folder.</>
+            ) : (
+              <>A password reset request has been processed for <strong>{email}</strong>.</>
+            )}
           </p>
 
           {devToken && (
-            <div style={{ margin: "16px 0", padding: "12px", borderRadius: "8px", background: "rgba(52, 89, 163, 0.08)", border: "1px dashed var(--blue-500)", textAlign: "left" }}>
-              <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--navy-900)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>
-                Development Mode Quick Access
+            <div style={{ margin: "16px 0", padding: "14px", borderRadius: "8px", background: "rgba(168, 85, 247, 0.1)", border: "1px dashed rgba(168, 85, 247, 0.4)", textAlign: "left" }}>
+              <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "#c084fc", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>
+                Development Notice: SMTP Not Configured
               </div>
-              <p style={{ fontSize: "0.82rem", color: "var(--slate-500)", margin: "0 0 10px" }}>
-                Mail server is simulated locally. Click below to continue directly to the reset screen:
+              <p style={{ fontSize: "0.82rem", color: "#cbd5e1", margin: "0 0 10px", lineHeight: 1.4 }}>
+                To send real emails to your inbox, enter your SMTP server credentials in the <code>.env</code> file. For local testing, click below to open the reset password screen:
               </p>
               <Link
                 to={`/reset-password?token=${devToken}`}
                 className="btn btn--emerald btn--sm btn--block"
               >
-                Proceed to Reset Password
+                Proceed to Reset Password Screen
               </Link>
             </div>
           )}
@@ -122,7 +128,7 @@ export default function ForgotPassword() {
               justifyContent: "center",
               gap: "6px",
               fontSize: "0.88rem",
-              color: "var(--slate-500)",
+              color: "#c084fc",
               textDecoration: "none",
               marginTop: "8px",
             }}

@@ -1,25 +1,19 @@
 <?php
 
 require_once('../../config/cors.php');
-session_start();
 header("Content-Type: application/json");
 require_once('../../config/database.php');
 require_once('../../services/NotificationService.php');
+require_once('../../middleware/auth.php');
+require_once('../../middleware/csrf.php');
 
-// 1. Strict Server-Side Session Authentication
-if (!isset($_SESSION["user_id"])) {
-    http_response_code(401);
-    echo json_encode([
-        "success" => false,
-        "message" => "Authentication required. Please log in to file a claim."
-    ]);
-    exit;
-}
+// 1. Strict Server-Side Verification: authenticated + non-suspended user in MySQL
+$authenticatedUser = requireAuth($conn);
+$user_id = (int)$authenticatedUser["id"];
 
-$user_id = (int)$_SESSION["user_id"];
-
-// 2. Parse & Validate Input
+// 2. Parse & Validate Input and CSRF
 $data = json_decode(file_get_contents("php://input"), true);
+validateCsrfToken($data);
 $item_id = (int)($data["item_id"] ?? 0);
 $message = trim($data["message"] ?? "");
 
@@ -167,6 +161,7 @@ if ($stmt->execute()) {
             }
         }
     }
+
 
     http_response_code(201);
     echo json_encode([

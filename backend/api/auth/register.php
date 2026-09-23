@@ -3,6 +3,21 @@
 require_once('../../config/cors.php');
 header("Content-Type: application/json");
 require_once('../../config/database.php');
+require_once('../../services/RateLimiter.php');
+
+// Rate limiting: max 5 registration attempts per hour per IP
+$clientIp = RateLimiter::getClientIp();
+$regKey = "reg:ip:" . $clientIp;
+$regCheck = RateLimiter::check($conn, $regKey, 5, 3600, 3600);
+if (!$regCheck['allowed']) {
+    http_response_code(429);
+    echo json_encode([
+        "success" => false,
+        "message" => "Too many registration attempts from this network. Please wait " . ceil($regCheck['retry_after'] / 60) . " minutes before trying again."
+    ]);
+    $conn->close();
+    exit;
+}
 
 // Only allow POST requests
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
@@ -32,6 +47,8 @@ $name = trim($data["name"] ?? "");
 $email = trim($data["email"] ?? "");
 $phone_number = trim($data["phone_number"] ?? "");
 $password = $data["password"] ?? "";
+$roll_number = trim($data["roll_number"] ?? "");
+$stream = trim($data["stream"] ?? "");
 
 // Validate required fields
 if ($name === "" || $email === "" || $password === "" || $phone_number === "") {
@@ -113,15 +130,18 @@ $checkPhoneStmt->close();
 // Hash the password securely
 $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
-// Normal registrations MUST have role = 'student'
+// Normal registrations MUST have role = 'student' and status = 'active'
 $role = "student";
+$status = "active";
+$dbRollNumber = $roll_number !== "" ? $roll_number : null;
+$dbStream = $stream !== "" ? $stream : null;
 
 $stmt = $conn->prepare(
-    "INSERT INTO users (name, email, phone_number, password, role)
-     VALUES (?, ?, ?, ?, ?)"
+    "INSERT INTO users (name, email, phone_number, password, role, roll_number, stream, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
 );
 
-$stmt->bind_param("sssss", $name, $email, $phone_number, $hashedPassword, $role);
+$stmt->bind_param("ssssssss", $name, $email, $phone_number, $hashedPassword, $role, $dbRollNumber, $dbStream, $status);
 
 if ($stmt->execute()) {
     http_response_code(201);
@@ -130,10 +150,11 @@ if ($stmt->execute()) {
         "message" => "Account created successfully. You can now log in."
     ]);
 } else {
+    error_log("Registration error: " . $conn->error);
     http_response_code(500);
     echo json_encode([
         "success" => false,
-        "message" => "Failed to create account: " . $conn->error
+        "message" => "Failed to create account. Please try again later."
     ]);
 }
 

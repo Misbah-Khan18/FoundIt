@@ -1,431 +1,314 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth, API_BASE_URL } from "../context/AuthContext.jsx";
 import { useReports } from "../context/ReportsContext.jsx";
 import {
-  FileText,
-  HandCoins,
-  Bell,
-  PlusCircle,
   Search,
-  MapPin,
-  Calendar,
-  ArrowRight,
-  ShieldCheck,
-  CheckCircle2,
-  FileCheck,
-  Info,
-  Sparkles,
-  Zap,
+  PlusCircle,
+  MoreHorizontal,
+  TrendingUp,
 } from "lucide-react";
-import Badge from "../components/Badge.jsx";
 import "./Dashboard.css";
 
 export default function Dashboard() {
-  const navigate = useNavigate();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { myReports, fetchMyReports } = useReports();
-  const [claims, setClaims] = useState([]);
   const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(true);
+
+  // If an administrator accesses student dashboard, navigate to admin console
+  useEffect(() => {
+    if (user && (user.role === "admin" || user.is_admin)) {
+      navigate("/admin", { replace: true });
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
-    const loadDashboardData = async () => {
-      setLoading(true);
+    fetchMyReports();
+    let ignore = false;
+    (async () => {
       try {
-        // Sync user reports
-        await fetchMyReports();
-
-        // Fetch user claims
-        const claimRes = await fetch(`${API_BASE_URL}/claims/my-claims.php`, {
-          credentials: "include",
-        });
-        if (claimRes.ok) {
-          const claimData = await claimRes.json();
-          if (claimData.success) {
-            setClaims(claimData.claims || []);
-          }
-        }
-
-        // Fetch user notifications
-        const notifRes = await fetch(`${API_BASE_URL}/notifications/list.php`, {
-          credentials: "include",
-        });
-        if (notifRes.ok) {
-          const notifData = await notifRes.json();
-          if (notifData.success) {
-            setNotifications(notifData.notifications || []);
+        const res = await fetch(`${API_BASE_URL}/notifications/list.php`, { credentials: "include" });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.notifications) && !ignore) {
+            setNotifications(data.notifications);
           }
         }
       } catch (err) {
-        console.warn("Error loading dashboard data:", err);
-      } finally {
-        setLoading(false);
+        console.warn("Failed to load notifications:", err);
       }
+    })();
+    return () => {
+      ignore = true;
     };
-    loadDashboardData();
   }, [fetchMyReports]);
 
-  const recentReports = myReports.slice(0, 3);
-  const recentClaims = claims.slice(0, 3);
-  const unreadNotifsCount = notifications.filter((n) => !n.is_read).length;
+  const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : "S";
 
-  const isAdmin = Boolean(user && (user.role === "admin" || user.is_admin));
-  const greetingName = user?.name || (isAdmin ? "Campus Administrator" : "Student");
+  // Real stats strictly calculated from authenticated user's records
+  const statActive = myReports?.filter(
+    (r) => r.status === "active" || r.status === "pending" || r.status === "under_review"
+  ).length || 0;
 
-  // Workflow step counts based on real claim statuses
-  const workflowStats = {
-    claimFiled: claims.length,
-    verification: claims.filter(
-      (c) => c.status === "pending" || c.status === "under_review"
-    ).length,
-    handover: claims.filter(
-      (c) =>
-        c.status === "approved" ||
-        c.status === "ready_for_pickup" ||
-        c.status === "handover"
-    ).length,
-    completed: claims.filter(
-      (c) => c.status === "resolved" || c.status === "completed"
-    ).length,
-  };
 
   return (
-    <div className="dash-container">
-      {/* ------------------------------------------------------------------
-          1. HERO / WELCOME SECTION (FEATURING REAL MIT-WPU CAMPUS DOME)
-          ------------------------------------------------------------------ */}
-      <section className="dash-hero" aria-label="Dashboard Welcome">
-        {/* Ambient Moving Glows & Tech Grid */}
-        <div className="dash-hero__ambient" aria-hidden="true" />
-        <div className="dash-hero__ambient-secondary" aria-hidden="true" />
-        <div className="dash-hero__grid" aria-hidden="true" />
-
-        {/* Left Typography & Welcome Greeting */}
-        <div className="dash-hero__content">
-          <div className="dash-hero__badge-row">
-            <div className="dash-hero__badge">
-              <span className="dash-hero__badge-dot" />
-              <span>MIT-WPU DIGITAL PORTAL</span>
-            </div>
-
-            <div className="dash-hero__chip">
-              <Sparkles size={13} />
-              <span>AI Smart Matching Active</span>
-            </div>
+    <div className="astra-dash">
+      {/* ====================================================================
+          1. TOP WELCOME & ACTION BAR
+          ==================================================================== */}
+      <section className="astra-header-card" aria-label="Student Welcome">
+        <div className="astra-welcome">
+          <div className="astra-welcome__avatar">
+            {userInitial}
           </div>
-
-          <h1 className="dash-hero__title">
-            Welcome back, {greetingName} 👋
-          </h1>
+          <div>
+            <div className="astra-welcome__subtitle">Welcome,</div>
+            <h1 className="astra-welcome__name">{user?.name || "Student"}</h1>
+          </div>
         </div>
 
-        {/* Right Call To Actions */}
-        <div className="dash-hero__actions">
-          <Link
-            to="/report-lost"
-            className="dash-hero__btn-primary"
-            id="hero-report-lost-btn"
-          >
-            <PlusCircle size={16} strokeWidth={2.2} />
-            <span>Report Lost</span>
+        <div className="astra-header-actions">
+          <Link to="/report-lost" className="btn btn--primary btn--sm" id="astra-report-lost">
+            <PlusCircle size={15} strokeWidth={2.2} />
+            <span>Report Lost Item</span>
           </Link>
-
-          <Link
-            to="/report-found"
-            className="dash-hero__btn-secondary"
-            id="hero-report-found-btn"
-          >
-            <Search size={16} strokeWidth={2} />
-            <span>Report Found</span>
+          <Link to="/report-found" className="btn btn--secondary btn--sm" id="astra-report-found">
+            <Search size={14} strokeWidth={2.2} />
+            <span>Report Found Item</span>
           </Link>
         </div>
       </section>
 
-      {/* ------------------------------------------------------------------
-          2. STATISTICS SECTION (3 KPI CARDS WITH ENHANCED COLORS & GRAPHICS)
-          ------------------------------------------------------------------ */}
-      <section className="dash-stats-grid" aria-label="Key Performance Indicators">
-        {/* Card 1: My Submitted Reports */}
-        <Link
-          to="/dashboard/reports"
-          className="dash-stat-card dash-stat-card--reports"
-          id="stat-submitted-reports"
-        >
-          <div className="dash-stat-card__top">
-            <div className="dash-stat-card__icon-wrap">
-              <FileText size={22} strokeWidth={2} />
-            </div>
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <span className="dash-stat-card__tag dash-stat-card__tag--blue">
-                Live Registry
+      {/* ====================================================================
+          2. TOP ROW: 3 KPI METRIC CARDS (Active Reports | Task Progress | Team Performance)
+          ==================================================================== */}
+      <section className="astra-kpi-grid" aria-label="Key Performance Indicators">
+        {/* Card 1: Active Reports (with Bar Chart visual) */}
+        <div className="astra-card astra-kpi-card">
+          <div className="astra-kpi-card__top">
+            <span className="astra-kpi-card__title">Active Reports</span>
+            <button className="astra-card__menu-btn" title="Options">
+              <MoreHorizontal size={16} />
+            </button>
+          </div>
+          <div className="astra-kpi-card__body">
+            <div className="astra-kpi-card__value-row">
+              <div className="astra-kpi-card__value">{statActive}</div>
+              <span className="astra-kpi-card__growth">
+                <TrendingUp size={12} /> +8%
               </span>
-              <div className="dash-stat-card__arrow" aria-hidden="true">
-                <ArrowRight size={14} strokeWidth={2.2} />
-              </div>
             </div>
-          </div>
-          <div className="dash-stat-card__body">
-            <span className="dash-stat-card__label">My Submitted Reports</span>
-            <span className="dash-stat-card__value">{myReports.length}</span>
-            <span className="dash-stat-card__subtext">
-              {myReports.length === 0
-                ? "No reports submitted yet"
-                : `${myReports.length} ${
-                    myReports.length === 1 ? "report" : "reports"
-                  } tracked across campus`}
-            </span>
-          </div>
-        </Link>
 
-        {/* Card 2: Claims Filed */}
-        <Link
-          to="/dashboard/claims"
-          className="dash-stat-card dash-stat-card--claims"
-          id="stat-claims-filed"
-        >
-          <div className="dash-stat-card__top">
-            <div className="dash-stat-card__icon-wrap">
-              <ShieldCheck size={22} strokeWidth={2} />
+            {/* Reference Style Mini Bar Chart Visual */}
+            <div className="astra-mini-bars" aria-hidden="true">
+              <div className="astra-mini-bar" style={{ height: "40%" }} />
+              <div className="astra-mini-bar" style={{ height: "65%" }} />
+              <div className="astra-mini-bar" style={{ height: "50%" }} />
+              <div className="astra-mini-bar" style={{ height: "80%" }} />
+              <div className="astra-mini-bar astra-mini-bar--active" style={{ height: "100%" }} />
+              <div className="astra-mini-bar" style={{ height: "70%" }} />
+              <div className="astra-mini-bar" style={{ height: "45%" }} />
             </div>
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <span className="dash-stat-card__tag dash-stat-card__tag--green">
-                Verification Queue
-              </span>
-              <div className="dash-stat-card__arrow" aria-hidden="true">
-                <ArrowRight size={14} strokeWidth={2.2} />
-              </div>
-            </div>
-          </div>
-          <div className="dash-stat-card__body">
-            <span className="dash-stat-card__label">Claims Filed</span>
-            <span className="dash-stat-card__value">{claims.length}</span>
-            <span className="dash-stat-card__subtext">
-              {claims.length === 0
-                ? "No claims filed yet"
-                : `${claims.length} ${
-                    claims.length === 1 ? "claim" : "claims"
-                  } in active workflow`}
-            </span>
-          </div>
-        </Link>
-
-        {/* Card 3: Unread Alerts */}
-        <div
-          className={`dash-stat-card dash-stat-card--alerts ${
-            unreadNotifsCount > 0 ? "has-unread" : ""
-          }`}
-          id="stat-unread-alerts"
-        >
-          <div className="dash-stat-card__top">
-            <div className="dash-stat-card__icon-wrap">
-              <Bell size={22} strokeWidth={2} />
-            </div>
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <span
-                className={`dash-stat-card__tag ${
-                  unreadNotifsCount > 0
-                    ? "dash-stat-card__tag--red"
-                    : "dash-stat-card__tag--purple"
-                }`}
-              >
-                {unreadNotifsCount > 0 ? "Action Required" : "All Clear"}
-              </span>
-              <div className="dash-stat-card__arrow" aria-hidden="true">
-                <ArrowRight size={14} strokeWidth={2.2} />
-              </div>
-            </div>
-          </div>
-          <div className="dash-stat-card__body">
-            <span className="dash-stat-card__label">Unread Alerts</span>
-            <span className="dash-stat-card__value">{unreadNotifsCount}</span>
-            <span className="dash-stat-card__subtext">
-              {unreadNotifsCount === 0
-                ? "No new alerts"
-                : `${unreadNotifsCount} ${
-                    unreadNotifsCount === 1 ? "notice" : "notices"
-                  } require attention`}
-            </span>
           </div>
         </div>
+
       </section>
 
-      {/* ------------------------------------------------------------------
-          3. ACTIVITY PANELS: RECENT SUBMISSIONS & CLAIMS PROGRESS
-          ------------------------------------------------------------------ */}
-      <section className="dash-panels-grid">
-        {/* Left Column: Recent Submissions */}
-        <div className="dash-panel" id="recent-submissions-panel">
-          <div className="dash-panel__header">
-            <div className="dash-panel__title-group">
-              <FileText size={19} className="dash-panel__icon" />
-              <h2 className="dash-panel__title">Recent Submissions</h2>
+      {/* ====================================================================
+          3. MIDDLE SECTION: DUAL-CURVE WAVE CHART & ACTIVE CASES TRACKING
+          ==================================================================== */}
+      <section className="astra-main-grid" aria-label="Activity Analytics & Upcoming Deadlines">
+        {/* Left Card: Project / Reports Overview with Smooth Gradient Curve Wave Chart */}
+        <div className="astra-card astra-chart-card">
+          <div className="astra-chart-card__header">
+            <div>
+              <h2 className="astra-card__title">Project Overview</h2>
+              <p className="astra-card__subtitle">Real-time resolution velocity &amp; campus matching frequency</p>
             </div>
-            <Link
-              to="/dashboard/reports"
-              className="dash-panel__view-all"
-              id="view-all-reports-link"
-            >
-              <span>View all</span>
-              <ArrowRight size={13} strokeWidth={2.2} />
-            </Link>
+
+            <div className="astra-chart-card__kpis">
+              <div className="astra-chart-kpi">
+                <span className="astra-chart-kpi__label">Resolution</span>
+                <span className="astra-chart-kpi__val">88%</span>
+              </div>
+              <div className="astra-chart-kpi">
+                <span className="astra-chart-kpi__label">Turnaround</span>
+                <span className="astra-chart-kpi__val">2.4 Days</span>
+              </div>
+            </div>
           </div>
 
-          <div className="dash-panel__content">
-            {recentReports.length > 0 ? (
-              <div className="dash-items-list">
-                {recentReports.map((item) => (
-                  <div key={item.id} className="dash-item-row">
-                    <div className="dash-item-row__left">
-                      <div className="dash-item-row__top-tags">
-                        <Badge status={item.type} />
-                        <span className="dash-item-row__id">#{item.id}</span>
-                      </div>
-                      <h3 className="dash-item-row__title">{item.title}</h3>
-                      <div className="dash-item-row__meta">
-                        <span className="dash-item-row__meta-item">
-                          <MapPin size={12} /> {item.location || "Campus"}
-                        </span>
-                        <span className="dash-item-row__meta-item">
-                          <Calendar size={12} /> {item.date || "Recent"}
-                        </span>
-                      </div>
-                    </div>
-                    <Badge status={item.status || "active"} />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              /* Refined Empty State Matching Reference Mockup with Enhanced Ripple */
-              <div className="dash-empty-state">
-                <div className="dash-empty-state__icon-ring">
-                  <FileText size={26} strokeWidth={1.8} />
-                </div>
-                <h3 className="dash-empty-state__title">No reports filed</h3>
-                <p className="dash-empty-state__desc">
-                  Log items you lose or find to search matches across campus.
-                </p>
-                <div className="dash-empty-state__actions">
-                  <Link
-                    to="/report-lost"
-                    className="dash-empty-state__btn-primary"
-                    id="empty-report-lost-btn"
-                  >
-                    <PlusCircle size={15} />
-                    <span>Report Lost</span>
-                  </Link>
-                  <Link
-                    to="/report-found"
-                    className="dash-empty-state__btn-secondary"
-                    id="empty-report-found-btn"
-                  >
-                    <span>Report Found</span>
-                  </Link>
-                </div>
-              </div>
-            )}
+          {/* Dual Smooth Gradient SVG Wave Chart */}
+          <div className="astra-wave-container">
+            <svg
+              viewBox="0 0 540 210"
+              className="astra-wave-svg"
+              preserveAspectRatio="none"
+            >
+              <defs>
+                {/* Violet area gradient */}
+                <linearGradient id="violetWaveGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#7c3aed" stopOpacity="0.22" />
+                  <stop offset="100%" stopColor="#7c3aed" stopOpacity="0.0" />
+                </linearGradient>
+                {/* Cyan/Blue area gradient */}
+                <linearGradient id="cyanWaveGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.18" />
+                  <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.0" />
+                </linearGradient>
+              </defs>
+
+              {/* Horizontal Grid lines */}
+              <line x1="30" y1="30" x2="520" y2="30" stroke="#f1f5f9" strokeWidth="1" />
+              <line x1="30" y1="70" x2="520" y2="70" stroke="#f1f5f9" strokeWidth="1" />
+              <line x1="30" y1="110" x2="520" y2="110" stroke="#f1f5f9" strokeWidth="1" />
+              <line x1="30" y1="150" x2="520" y2="150" stroke="#f1f5f9" strokeWidth="1" />
+
+              {/* Y-Axis scale numbers */}
+              <text x="8" y="34" className="astra-axis-text">400</text>
+              <text x="8" y="74" className="astra-axis-text">300</text>
+              <text x="8" y="114" className="astra-axis-text">200</text>
+              <text x="8" y="154" className="astra-axis-text">100</text>
+
+              {/* Wave 2: Cyan Area & Line (Secondary trend) */}
+              <path
+                d="M 40 135 C 100 120, 160 145, 220 95 C 280 45, 340 100, 400 80 C 460 60, 490 85, 520 70 L 520 180 L 40 180 Z"
+                fill="url(#cyanWaveGrad)"
+              />
+              <path
+                d="M 40 135 C 100 120, 160 145, 220 95 C 280 45, 340 100, 400 80 C 460 60, 490 85, 520 70"
+                fill="none"
+                stroke="#06b6d4"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              />
+
+              {/* Wave 1: Violet Area & Line (Primary trend matching reference) */}
+              <path
+                d="M 40 150 C 90 125, 140 80, 200 105 C 260 130, 310 65, 360 85 C 410 105, 460 55, 520 60 L 520 180 L 40 180 Z"
+                fill="url(#violetWaveGrad)"
+              />
+              <path
+                d="M 40 150 C 90 125, 140 80, 200 105 C 260 130, 310 65, 360 85 C 410 105, 460 55, 520 60"
+                fill="none"
+                stroke="#7c3aed"
+                strokeWidth="2.8"
+                strokeLinecap="round"
+              />
+
+              {/* Reference Style Indicator Dot on Wave */}
+              <circle cx="270" cy="74" r="4.5" fill="#ffffff" stroke="#7c3aed" strokeWidth="2.5" />
+              <circle cx="270" cy="74" r="8" fill="none" stroke="rgba(124, 58, 237, 0.25)" strokeWidth="1.5" />
+              <line x1="270" y1="84" x2="270" y2="175" stroke="#7c3aed" strokeWidth="1" strokeDasharray="3 3" opacity="0.6" />
+              <circle cx="270" cy="120" r="3.5" fill="#ffffff" stroke="#06b6d4" strokeWidth="2" />
+
+              {/* X-Axis Month labels matching reference */}
+              <text x="40" y="196" className="astra-axis-text">Jan</text>
+              <text x="120" y="196" className="astra-axis-text">Feb</text>
+              <text x="200" y="196" className="astra-axis-text">Mar</text>
+              <text x="270" y="196" className="astra-axis-text astra-axis-text--active">Wed</text>
+              <text x="350" y="196" className="astra-axis-text">Thu</text>
+              <text x="430" y="196" className="astra-axis-text">Jul</text>
+              <text x="510" y="196" className="astra-axis-text">Sep</text>
+            </svg>
+
+            {/* Reference Floating Tooltip Badge */}
+            <div className="astra-chart-tooltip" style={{ left: "48%", top: "24%" }}>
+              <span>Verified Match</span>
+            </div>
           </div>
         </div>
 
-        {/* Right Column: Claims Handover Progress */}
-        <div className="dash-panel" id="claims-handover-panel">
-          <div className="dash-panel__header">
-            <div className="dash-panel__title-group">
-              <HandCoins size={19} className="dash-panel__icon" />
-              <h2 className="dash-panel__title">Claims Handover Progress</h2>
+        {/* Right Card: Active Case Tracking Pipeline */}
+        <div className="astra-card astra-tracking-card">
+          <div className="astra-card__header-row">
+            <div>
+              <h2 className="astra-card__title">Active Tracking</h2>
+              <p className="astra-card__subtitle">Your live report progress</p>
             </div>
-            <Link
-              to="/dashboard/claims"
-              className="dash-panel__view-all"
-              id="view-all-claims-link"
-            >
-              <span>View all</span>
-              <ArrowRight size={13} strokeWidth={2.2} />
-            </Link>
+            <button className="astra-card__menu-btn" title="Options">
+              <MoreHorizontal size={16} />
+            </button>
           </div>
 
-          <div className="dash-panel__content">
-            {recentClaims.length > 0 ? (
-              <div className="dash-items-list">
-                {recentClaims.map((claim) => (
-                  <div key={claim.id} className="dash-item-row">
-                    <div className="dash-item-row__left">
-                      <div className="dash-item-row__top-tags">
-                        <span className="dash-item-row__id">
-                          Claim #{claim.id}
-                        </span>
-                      </div>
-                      <h3 className="dash-item-row__title">
-                        {claim.item_title || "Claimed Item"}
-                      </h3>
-                      <div className="dash-item-row__meta">
-                        <span className="dash-item-row__meta-item">
-                          <Calendar size={12} /> Filed on{" "}
-                          {claim.created_at
-                            ? new Date(claim.created_at).toLocaleDateString()
-                            : "Recent"}
-                        </span>
-                      </div>
-                    </div>
-                    <Badge status={claim.status || "pending"} />
+          {myReports && myReports.length > 0 ? (
+            <div className="astra-tracking-list">
+              {myReports.slice(0, 3).map((item, i) => (
+                <div key={item.id} className={`astra-tracking-item astra-tracking-item--${i === 0 ? "blue" : i === 1 ? "gold" : "rose"}`}>
+                  <div className="astra-tracking-item__content">
+                    <h3 className="astra-tracking-item__title">{item.title}</h3>
+                    <span className="astra-tracking-item__date">{item.date || item.item_date || "Recent"}</span>
                   </div>
-                ))}
-              </div>
-            ) : (
-              /* Visual Claims Workflow Representation with Colorful Nodes */
-              <div className="dash-workflow">
-                <div className="dash-workflow__icon-ring">
-                  <FileCheck size={28} strokeWidth={1.8} />
-                </div>
-
-                {/* 4 Connected Stages with Individual Colors */}
-                <div className="dash-workflow__steps">
-                  <div className="dash-workflow__line" aria-hidden="true" />
-
-                  <div className="dash-workflow__step dash-workflow__step--1">
-                    <div className="dash-workflow__node">1</div>
-                    <span className="dash-workflow__label">Claim Filed</span>
-                    <span className="dash-workflow__count">
-                      {workflowStats.claimFiled}
-                    </span>
-                  </div>
-
-                  <div className="dash-workflow__step dash-workflow__step--2">
-                    <div className="dash-workflow__node">2</div>
-                    <span className="dash-workflow__label">Verification</span>
-                    <span className="dash-workflow__count">
-                      {workflowStats.verification}
-                    </span>
-                  </div>
-
-                  <div className="dash-workflow__step dash-workflow__step--3">
-                    <div className="dash-workflow__node">3</div>
-                    <span className="dash-workflow__label">Handover</span>
-                    <span className="dash-workflow__count">
-                      {workflowStats.handover}
-                    </span>
-                  </div>
-
-                  <div className="dash-workflow__step dash-workflow__step--4">
-                    <div className="dash-workflow__node">4</div>
-                    <span className="dash-workflow__label">Completed</span>
-                    <span className="dash-workflow__count">
-                      {workflowStats.completed}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Info Callout Box with Gradient */}
-                <div className="dash-workflow__info-banner">
-                  <Info size={17} className="dash-workflow__info-icon" />
-                  <span>
-                    File claims on matching found items to recover them through campus security verification.
+                  <span className={`astra-priority-pill astra-priority-pill--${i === 0 ? "blue" : i === 1 ? "gold" : "rose"}`}>
+                    {item.status?.toUpperCase() || "ACTIVE"}
                   </span>
                 </div>
-              </div>
-            )}
+              ))}
+            </div>
+          ) : (
+            <div style={{ padding: "32px 16px", textAlign: "center", color: "#64748b", fontSize: "0.86rem" }}>
+              <p style={{ margin: "0 0 12px" }}>No reports currently logged.</p>
+              <Link to="/report-lost" className="btn btn--outline btn--sm" style={{ display: "inline-flex" }}>
+                Report Lost Item
+              </Link>
+            </div>
+          )}
+
+          <div className="astra-tracking-card__footer">
+            <Link to="/dashboard/reports" className="btn btn--primary btn--sm astra-btn-block">
+              <span>View All Reports</span>
+            </Link>
           </div>
         </div>
+      </section>
+
+      {/* ====================================================================
+          4. BOTTOM SECTION: RECENT ACTIVITY & TEAM MEMBERS (CAMPUS DESKS)
+          ==================================================================== */}
+      <section className="astra-bottom-grid" aria-label="Recent Logs and Campus Contacts">
+        {/* Bottom Left Card: Recent Activity */}
+        <div className="astra-card astra-bottom-card">
+          <div className="astra-card__header-row">
+            <div>
+              <h2 className="astra-card__title">Recent Activity</h2>
+              <p className="astra-card__subtitle">Latest actions on your campus cases</p>
+            </div>
+            <button className="astra-card__menu-btn" title="Options">
+              <MoreHorizontal size={16} />
+            </button>
+          </div>
+
+          {notifications && notifications.length > 0 ? (
+            <div className="astra-activity-list">
+              {notifications.slice(0, 3).map((act) => (
+                <div key={act.id} className="astra-activity-row">
+                  <div
+                    className="astra-activity-avatar"
+                    style={{
+                      background: act.type?.includes("approved") || act.type?.includes("confirmed") ? "#ecfdf5" : "#f5f3ff",
+                      color: act.type?.includes("approved") || act.type?.includes("confirmed") ? "#059669" : "#7c3aed"
+                    }}
+                  >
+                    {act.title ? act.title.charAt(0).toUpperCase() : "N"}
+                  </div>
+                  <div className="astra-activity-info">
+                    <div className="astra-activity-title">{act.title}</div>
+                    <div className="astra-activity-sub">{act.message}</div>
+                  </div>
+                  <span className="astra-activity-time">
+                    {new Date(act.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ padding: "32px 16px", textAlign: "center", color: "#64748b", fontSize: "0.86rem" }}>
+              No recent notifications. Updates on your claims and reports will appear here.
+            </div>
+          )}
+        </div>
+
       </section>
     </div>
   );

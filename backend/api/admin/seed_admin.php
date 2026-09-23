@@ -1,14 +1,27 @@
 <?php
 
-require_once('../../config/cors.php');
-header("Content-Type: application/json");
-require_once('../../config/database.php');
+/**
+ * FoundIt - Admin Seeding Utility
+ * 
+ * SECURITY: Restricted to CLI execution only. Cannot be executed via public web requests.
+ */
 
-// Admin credentials to seed
+if (php_sapi_name() !== 'cli') {
+    http_response_code(403);
+    header("Content-Type: application/json");
+    echo json_encode([
+        "success" => false,
+        "message" => "Forbidden: Admin seeding utility is strictly restricted to command-line execution."
+    ]);
+    exit;
+}
+
+require_once(__DIR__ . '/../../config/database.php');
+
 $adminName = "Campus Administrator";
 $adminEmail = "admin@mitwpu.edu.in";
 $adminPhone = "+919876543210";
-$adminPasswordPlain = "Admin@1234";
+$adminPasswordPlain = getenv('ADMIN_SEED_PASSWORD') ?: "Admin@1234";
 $adminPasswordHash = password_hash($adminPasswordPlain, PASSWORD_DEFAULT);
 $adminRole = "admin";
 
@@ -19,49 +32,23 @@ $stmt->execute();
 $res = $stmt->get_result();
 
 if ($res->num_rows > 0) {
-    // Update existing user to ensure admin role and password
     $row = $res->fetch_assoc();
-    $updateStmt = $conn->prepare("UPDATE users SET password = ?, role = 'admin', name = ? WHERE id = ?");
+    $updateStmt = $conn->prepare("UPDATE users SET password = ?, role = 'admin', status = 'active', name = ? WHERE id = ?");
     $updateStmt->bind_param("ssi", $adminPasswordHash, $adminName, $row["id"]);
     $updateStmt->execute();
     $updateStmt->close();
 
-    echo json_encode([
-        "success" => true,
-        "message" => "Admin user credentials updated successfully.",
-        "credentials" => [
-            "email" => $adminEmail,
-            "password" => $adminPasswordPlain,
-            "role" => "admin",
-            "dashboard_url" => "/admin"
-        ]
-    ]);
+    echo "Admin user credentials refreshed successfully (ID: {$row['id']}).\n";
 } else {
-    // Insert new admin user
-    $insStmt = $conn->prepare("INSERT INTO users (name, email, phone_number, password, role) VALUES (?, ?, ?, ?, ?)");
+    $insStmt = $conn->prepare("INSERT INTO users (name, email, phone_number, password, role, status) VALUES (?, ?, ?, ?, ?, 'active')");
     $insStmt->bind_param("sssss", $adminName, $adminEmail, $adminPhone, $adminPasswordHash, $adminRole);
     if ($insStmt->execute()) {
-        echo json_encode([
-            "success" => true,
-            "message" => "Default admin user created successfully.",
-            "credentials" => [
-                "email" => $adminEmail,
-                "password" => $adminPasswordPlain,
-                "role" => "admin",
-                "dashboard_url" => "/admin"
-            ]
-        ]);
+        echo "Default administrator user created successfully (ID: {$insStmt->insert_id}).\n";
     } else {
-        http_response_code(500);
-        echo json_encode([
-            "success" => false,
-            "message" => "Failed to create admin user: " . $conn->error
-        ]);
+        echo "Failed to create administrator user: " . $conn->error . "\n";
     }
     $insStmt->close();
 }
 
 $stmt->close();
 $conn->close();
-
-?>

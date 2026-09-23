@@ -1,19 +1,24 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { API_BASE_URL } from "./AuthContext.jsx";
+import { API_BASE_URL, fetchWithCsrf, useAuth } from "./AuthContext.jsx";
 
 const AdminContext = createContext(null);
 
 export function AdminProvider({ children }) {
+  const { user } = useAuth();
+  const isAdmin = Boolean(user && (user.role === "admin" || user.is_admin));
+
   const [items, setItems] = useState([]);
   const [users, setUsers] = useState([]);
   const [claims, setClaims] = useState([]);
   const [matches, setMatches] = useState([]);
   const [activities, setActivities] = useState([]);
   const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(isAdmin);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
   const [globalSearch, setGlobalSearch] = useState("");
-  const [timeFilter, setTimeFilter] = useState("30days");
+  const [timeFilter, setTimeFilter] = useState("all");
   const [toasts, setToasts] = useState([]);
 
   // Toast notification helper
@@ -29,8 +34,29 @@ export function AdminProvider({ children }) {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
+  // Broadcast helper to notify other tabs & window listeners of state changes
+  const broadcastAdminChange = useCallback(() => {
+    window.dispatchEvent(new Event("foundit-refresh-admin"));
+    window.dispatchEvent(new Event("foundit-refresh-notifications"));
+    try {
+      if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+        const ch = new BroadcastChannel("foundit_sync_channel");
+        ch.postMessage({ type: "refresh-admin", timestamp: Date.now() });
+        ch.close();
+      }
+    } catch (_e) {
+      void _e;
+    }
+  }, []);
+
   // Primary data synchronization function with backend
   const refreshAdminData = useCallback(async () => {
+    if (!isAdmin) {
+      setLoading(false);
+      return;
+    }
+
+    setIsRefreshing(true);
     try {
       const [repRes, userRes, claimRes, matchRes, actRes, notifRes] = await Promise.allSettled([
         fetch(`${API_BASE_URL}/admin/reports.php`, { credentials: "include" }),
@@ -82,47 +108,109 @@ export function AdminProvider({ children }) {
           setNotifications(notifData.notifications);
         }
       }
+
+      setLastUpdated(new Date());
+      window.dispatchEvent(new Event("foundit-refresh-notifications"));
     } catch (err) {
       console.warn("Backend sync notice:", err);
     } finally {
+      setIsRefreshing(false);
       setLoading(false);
     }
-  }, []);
+  }, [isAdmin]);
 
-  // Initial fetch and dynamic periodic real-time sync (every 8 seconds)
+  // Real-Time Polling, Focus Sync, and Cross-Tab Synchronization
   useEffect(() => {
+    if (!isAdmin) {
+      return;
+    }
+
     let isMounted = true;
-    const load = async () => {
-      if (isMounted) {
-        await refreshAdminData();
+
+    // 1. Initial immediate fetch
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    refreshAdminData();
+
+    // 2. Real-time fast polling (every 4 seconds when tab is actively visible)
+    let pollInterval = setInterval(() => {
+      if (isMounted && typeof document !== "undefined" && !document.hidden) {
+        refreshAdminData();
+      }
+    }, 4000);
+
+    // 3. Tab visibility changes & window focus triggers instant refresh
+    const handleVisibility = () => {
+      if (typeof document !== "undefined" && !document.hidden && isMounted) {
+        refreshAdminData();
       }
     };
-    load();
-    const interval = setInterval(() => {
+
+    const handleFocus = () => {
       if (isMounted) {
         refreshAdminData();
       }
-    }, 8000);
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("focus", handleFocus);
+
+    // 4. Local window event listener (dispatched on any report/claim creation in current tab)
+    const handleLocalRefresh = () => {
+      if (isMounted) {
+        refreshAdminData();
+      }
+    };
+    window.addEventListener("foundit-refresh-admin", handleLocalRefresh);
+
+    // 5. Cross-tab BroadcastChannel listener (dispatched when user reports/claims in another tab)
+    let syncChannel = null;
+    try {
+      if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+        syncChannel = new BroadcastChannel("foundit_sync_channel");
+        syncChannel.onmessage = (event) => {
+          if (
+            event.data?.type === "refresh-admin" ||
+            event.data?.type === "SYNC_REPORT_CREATED" ||
+            event.data?.type === "SYNC_CLAIM_CREATED" ||
+            event.data?.type === "item-created" ||
+            event.data?.type === "claim-created" ||
+            event.data?.type?.startsWith("SYNC_")
+          ) {
+            if (isMounted) {
+              refreshAdminData();
+            }
+          }
+        };
+      }
+    } catch (e) {
+      console.debug("BroadcastChannel not supported", e);
+    }
 
     return () => {
       isMounted = false;
-      clearInterval(interval);
+      clearInterval(pollInterval);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("foundit-refresh-admin", handleLocalRefresh);
+      if (syncChannel) {
+        syncChannel.close();
+      }
     };
-  }, [refreshAdminData]);
+  }, [isAdmin, refreshAdminData]);
 
   // Action: Approve a report (from under_review / pending -> active)
   const approveReport = useCallback(
     async (id) => {
       try {
-        const res = await fetch(`${API_BASE_URL}/admin/reports.php`, {
+        const res = await fetchWithCsrf(`${API_BASE_URL}/admin/reports.php`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          credentials: "include",
           body: JSON.stringify({ item_id: id, status: "active" }),
         });
 
         if (res.ok) {
           addToast(`✓ Report #${id} approved and published to portal`, "success");
+          broadcastAdminChange();
           await refreshAdminData();
         } else {
           addToast(`Failed to approve report #${id}`, "error");
@@ -132,22 +220,22 @@ export function AdminProvider({ children }) {
         addToast("Network error while approving report", "error");
       }
     },
-    [addToast, refreshAdminData]
+    [addToast, broadcastAdminChange, refreshAdminData]
   );
 
   // Action: Reject a report
   const rejectReport = useCallback(
     async (id, reason = "Incomplete or duplicate information") => {
       try {
-        const res = await fetch(`${API_BASE_URL}/admin/reports.php`, {
+        const res = await fetchWithCsrf(`${API_BASE_URL}/admin/reports.php`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          credentials: "include",
           body: JSON.stringify({ item_id: id, status: "rejected", reason }),
         });
 
         if (res.ok) {
           addToast(`✕ Report #${id} has been rejected`, "error");
+          broadcastAdminChange();
           await refreshAdminData();
         } else {
           addToast(`Failed to reject report #${id}`, "error");
@@ -157,22 +245,48 @@ export function AdminProvider({ children }) {
         addToast("Network error while rejecting report", "error");
       }
     },
-    [addToast, refreshAdminData]
+    [addToast, broadcastAdminChange, refreshAdminData]
+  );
+
+  // Action: Delete a report completely
+  const deleteReport = useCallback(
+    async (id) => {
+      try {
+        const res = await fetchWithCsrf(`${API_BASE_URL}/admin/reports.php`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ item_id: id }),
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          addToast(`✓ Report #${id} deleted from database`, "info");
+          broadcastAdminChange();
+          await refreshAdminData();
+        } else {
+          addToast(data.message || `Failed to delete report #${id}`, "error");
+        }
+      } catch (err) {
+        console.error("Delete report error:", err);
+        addToast("Network error while deleting report", "error");
+      }
+    },
+    [addToast, broadcastAdminChange, refreshAdminData]
   );
 
   // Action: Mark as Found
   const markAsFound = useCallback(
     async (id) => {
       try {
-        const res = await fetch(`${API_BASE_URL}/admin/reports.php`, {
+        const res = await fetchWithCsrf(`${API_BASE_URL}/admin/reports.php`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          credentials: "include",
           body: JSON.stringify({ item_id: id, status: "resolved" }),
         });
 
         if (res.ok) {
           addToast(`✓ Item #${id} marked as found & closed`, "success");
+          broadcastAdminChange();
           await refreshAdminData();
         } else {
           addToast(`Failed to update item #${id}`, "error");
@@ -182,22 +296,22 @@ export function AdminProvider({ children }) {
         addToast("Network error while updating item", "error");
       }
     },
-    [addToast, refreshAdminData]
+    [addToast, broadcastAdminChange, refreshAdminData]
   );
 
   // Action: Mark as Returned
   const markAsReturned = useCallback(
     async (id, ownerName = "Student") => {
       try {
-        const res = await fetch(`${API_BASE_URL}/admin/reports.php`, {
+        const res = await fetchWithCsrf(`${API_BASE_URL}/admin/reports.php`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          credentials: "include",
           body: JSON.stringify({ item_id: id, status: "resolved", owner: ownerName }),
         });
 
         if (res.ok) {
           addToast(`✓ Item #${id} marked as safely returned to ${ownerName}`, "success");
+          broadcastAdminChange();
           await refreshAdminData();
         } else {
           addToast(`Failed to mark item #${id} returned`, "error");
@@ -207,22 +321,22 @@ export function AdminProvider({ children }) {
         addToast("Network error while updating return status", "error");
       }
     },
-    [addToast, refreshAdminData]
+    [addToast, broadcastAdminChange, refreshAdminData]
   );
 
   // Action: Approve Claim
   const approveClaim = useCallback(
     async (claimId) => {
       try {
-        const res = await fetch(`${API_BASE_URL}/admin/claims.php`, {
+        const res = await fetchWithCsrf(`${API_BASE_URL}/admin/claims.php`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          credentials: "include",
           body: JSON.stringify({ claim_id: claimId, status: "approved" }),
         });
 
         if (res.ok) {
           addToast(`✓ Claim #${claimId} approved! Ownership verified.`, "success");
+          broadcastAdminChange();
           await refreshAdminData();
         } else {
           addToast(`Failed to approve claim #${claimId}`, "error");
@@ -232,22 +346,22 @@ export function AdminProvider({ children }) {
         addToast("Network error while approving claim", "error");
       }
     },
-    [addToast, refreshAdminData]
+    [addToast, broadcastAdminChange, refreshAdminData]
   );
 
   // Action: Reject Claim
   const rejectClaim = useCallback(
     async (claimId) => {
       try {
-        const res = await fetch(`${API_BASE_URL}/admin/claims.php`, {
+        const res = await fetchWithCsrf(`${API_BASE_URL}/admin/claims.php`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          credentials: "include",
           body: JSON.stringify({ claim_id: claimId, status: "rejected" }),
         });
 
         if (res.ok) {
           addToast(`✕ Claim #${claimId} rejected.`, "error");
+          broadcastAdminChange();
           await refreshAdminData();
         } else {
           addToast(`Failed to reject claim #${claimId}`, "error");
@@ -257,30 +371,48 @@ export function AdminProvider({ children }) {
         addToast("Network error while rejecting claim", "error");
       }
     },
-    [addToast, refreshAdminData]
+    [addToast, broadcastAdminChange, refreshAdminData]
   );
 
-  // Action: Request Information for Claim
+  // Action: Request Information for Claim (real backend notification sent)
   const requestClaimInfo = useCallback(
-    (claimId) => {
-      addToast(`ℹ Additional proof requested from claimant for Claim #${claimId}.`, "info");
+    async (claimId) => {
+      try {
+        const res = await fetchWithCsrf(`${API_BASE_URL}/admin/claims.php`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ claim_id: claimId, status: "request_info" }),
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          addToast(`ℹ Additional proof requested from claimant for Claim #${claimId}`, "info");
+          broadcastAdminChange();
+          await refreshAdminData();
+        } else {
+          addToast(data.message || `Failed to request proof for Claim #${claimId}`, "error");
+        }
+      } catch (err) {
+        console.error("Request proof error:", err);
+        addToast("Network error while requesting proof", "error");
+      }
     },
-    [addToast]
+    [addToast, broadcastAdminChange, refreshAdminData]
   );
 
   // Action: Confirm Match
   const confirmMatch = useCallback(
     async (matchId) => {
       try {
-        const res = await fetch(`${API_BASE_URL}/admin/matches.php`, {
+        const res = await fetchWithCsrf(`${API_BASE_URL}/admin/matches.php`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          credentials: "include",
           body: JSON.stringify({ match_id: matchId, status: "confirmed" }),
         });
 
         if (res.ok) {
           addToast(`✓ Smart match confirmed and items updated.`, "success");
+          broadcastAdminChange();
           await refreshAdminData();
         } else {
           addToast(`Failed to confirm match.`, "error");
@@ -290,22 +422,22 @@ export function AdminProvider({ children }) {
         addToast("Network error while confirming match.", "error");
       }
     },
-    [addToast, refreshAdminData]
+    [addToast, broadcastAdminChange, refreshAdminData]
   );
 
   // Action: Reject Match
   const rejectMatch = useCallback(
     async (matchId) => {
       try {
-        const res = await fetch(`${API_BASE_URL}/admin/matches.php`, {
+        const res = await fetchWithCsrf(`${API_BASE_URL}/admin/matches.php`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          credentials: "include",
           body: JSON.stringify({ match_id: matchId, status: "rejected" }),
         });
 
         if (res.ok) {
           addToast(`✕ Smart match candidate marked as rejected.`, "info");
+          broadcastAdminChange();
           await refreshAdminData();
         } else {
           addToast(`Failed to reject match.`, "error");
@@ -315,7 +447,7 @@ export function AdminProvider({ children }) {
         addToast("Network error while rejecting match.", "error");
       }
     },
-    [addToast, refreshAdminData]
+    [addToast, broadcastAdminChange, refreshAdminData]
   );
 
   // Action: Toggle User Role
@@ -324,35 +456,58 @@ export function AdminProvider({ children }) {
       const target = users.find((u) => u.id === userId);
       const newRole = target?.role === "admin" ? "student" : "admin";
       try {
-        const res = await fetch(`${API_BASE_URL}/admin/users.php`, {
+        const res = await fetchWithCsrf(`${API_BASE_URL}/admin/users.php`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          credentials: "include",
           body: JSON.stringify({ user_id: userId, role: newRole }),
         });
 
         if (res.ok) {
           addToast(`✓ ${target?.name || "User"} role updated to ${newRole.toUpperCase()}`, "info");
+          broadcastAdminChange();
           await refreshAdminData();
         }
       } catch (e) {
         console.error("User role error:", e);
       }
     },
-    [users, addToast, refreshAdminData]
+    [users, addToast, broadcastAdminChange, refreshAdminData]
   );
 
   // Action: Toggle User Status
   const toggleUserStatus = useCallback(
-    (userId) => {
+    async (userId) => {
       const u = users.find((usr) => usr.id === userId);
-      const nextStatus = u?.status === "suspended" ? "active" : "suspended";
-      setUsers((prev) =>
-        prev.map((usr) => (usr.id === userId ? { ...usr, status: nextStatus } : usr))
-      );
-      addToast(`Account for ${u?.name || "User"} set to ${nextStatus}`, nextStatus === "active" ? "success" : "error");
+      if (!u) return;
+      if (u.role === "admin") {
+        addToast("Cannot suspend an administrator account.", "error");
+        return;
+      }
+      const nextStatus = u.status === "suspended" ? "active" : "suspended";
+      try {
+        const res = await fetchWithCsrf(`${API_BASE_URL}/admin/users.php`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: userId, status: nextStatus }),
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          addToast(
+            `Account for ${u.name || "User"} set to ${nextStatus.toUpperCase()}`,
+            nextStatus === "active" ? "success" : "error"
+          );
+          broadcastAdminChange();
+          await refreshAdminData();
+        } else {
+          addToast(data.message || "Failed to update user status.", "error");
+        }
+      } catch (err) {
+        console.error("Toggle user status error:", err);
+        addToast("Network error while updating user status.", "error");
+      }
     },
-    [users, addToast]
+    [users, addToast, broadcastAdminChange, refreshAdminData]
   );
 
   // Dynamically calculated metrics from live database state
@@ -386,6 +541,8 @@ export function AdminProvider({ children }) {
     activities,
     notifications,
     loading,
+    isRefreshing,
+    lastUpdated,
     stats,
     globalSearch,
     setGlobalSearch,
@@ -397,6 +554,7 @@ export function AdminProvider({ children }) {
     refreshAdminData,
     approveReport,
     rejectReport,
+    deleteReport,
     markAsFound,
     markAsReturned,
     approveClaim,

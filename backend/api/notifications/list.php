@@ -1,27 +1,37 @@
 <?php
 
 require_once('../../config/cors.php');
-session_start();
 header("Content-Type: application/json");
 require_once('../../config/database.php');
+require_once('../../middleware/auth.php');
 
-if (!isset($_SESSION["user_id"])) {
-    http_response_code(401);
-    echo json_encode([
-        "success" => false,
-        "message" => "Authentication required."
-    ]);
-    exit;
+$authenticatedUser = requireAuth($conn);
+$user_id = (int)$authenticatedUser["id"];
+
+$isStudent = (($authenticatedUser["role"] ?? "student") === "student");
+
+if ($isStudent) {
+    // Students strictly receive notifications regarding updates to their reports and claims.
+    // Exclude redundant submission confirmations and administrative alerts.
+    $stmt = $conn->prepare(
+        "SELECT id, user_id, title, message, type, related_item_id, related_claim_id, is_read, created_at
+         FROM notifications
+         WHERE user_id = ?
+           AND type NOT IN ('report_created')
+           AND title NOT LIKE 'Report Submitted%'
+           AND title NOT LIKE 'Claim Submitted%'
+           AND title NOT LIKE 'New % Report%'
+           AND title NOT LIKE 'Pending Claim%'
+         ORDER BY created_at DESC"
+    );
+} else {
+    $stmt = $conn->prepare(
+        "SELECT id, user_id, title, message, type, related_item_id, related_claim_id, is_read, created_at
+         FROM notifications
+         WHERE user_id = ?
+         ORDER BY created_at DESC"
+    );
 }
-
-$user_id = (int)$_SESSION["user_id"];
-
-$stmt = $conn->prepare(
-    "SELECT id, user_id, title, message, type, related_item_id, related_claim_id, is_read, created_at
-     FROM notifications
-     WHERE user_id = ?
-     ORDER BY created_at DESC"
-);
 
 $stmt->bind_param("i", $user_id);
 $stmt->execute();

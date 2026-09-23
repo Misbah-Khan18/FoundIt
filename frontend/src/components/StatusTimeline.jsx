@@ -18,7 +18,7 @@ export function getStageIndex(status = "active") {
   return 0; // "active" or "reported" or "open"
 }
 
-export default function StatusTimeline({ status = "active", itemType = "lost", compact = false }) {
+export default function StatusTimeline({ status = "active", compact = false }) {
   const currentIndex = getStageIndex(status);
 
   return (
@@ -41,7 +41,7 @@ export default function StatusTimeline({ status = "active", itemType = "lost", c
             left: "14px",
             right: "14px",
             height: "3px",
-            background: "var(--border-light)",
+            background: "#E9D5FF",
             zIndex: 0,
           }}
         />
@@ -55,7 +55,7 @@ export default function StatusTimeline({ status = "active", itemType = "lost", c
             width: `${(currentIndex / (STAGES.length - 1)) * 100}%`,
             maxWidth: "calc(100% - 28px)",
             height: "3px",
-            background: itemType === "lost" ? "var(--navy-900)" : "var(--blue-500)",
+            background: "#7C3AED",
             transition: "width 0.4s ease",
             zIndex: 1,
           }}
@@ -88,14 +88,10 @@ export default function StatusTimeline({ status = "active", itemType = "lost", c
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  background: isCurrent
-                    ? (itemType === "lost" ? "var(--navy-900)" : "var(--blue-500)")
-                    : isDone
-                    ? "var(--navy-900)"
-                    : "#ffffff",
-                  color: isDone ? "#ffffff" : "var(--slate-500)",
-                  border: isDone ? "none" : "2px solid var(--border-light)",
-                  boxShadow: isCurrent ? "0 0 0 4px rgba(30, 54, 116, 0.15)" : "none",
+                  background: isDone ? "#7C3AED" : "#FFFFFF",
+                  color: isDone ? "#FFFFFF" : "#94A3B8",
+                  border: isDone ? "none" : "2px solid #CBD5E1",
+                  boxShadow: isCurrent ? "0 0 0 4px rgba(124, 58, 237, 0.2)" : "none",
                   transition: "all 0.25s ease",
                 }}
                 title={stage.label}
@@ -106,9 +102,9 @@ export default function StatusTimeline({ status = "active", itemType = "lost", c
               {!compact && (
                 <span
                   style={{
-                    fontSize: "0.72rem",
-                    fontWeight: isCurrent ? 700 : 500,
-                    color: isCurrent ? "var(--navy-900)" : isDone ? "var(--ink)" : "var(--slate-500)",
+                    fontSize: "0.74rem",
+                    fontWeight: isCurrent ? 700 : isDone ? 600 : 500,
+                    color: isCurrent ? "#0F172A" : isDone ? "#1E293B" : "#64748B",
                     textAlign: "center",
                     whiteSpace: "nowrap",
                     overflow: "hidden",

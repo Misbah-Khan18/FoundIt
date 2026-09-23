@@ -1,7 +1,6 @@
 import { Link, NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
-  FileText,
   HandCoins,
   Bell,
   Users,
@@ -11,9 +10,11 @@ import {
   LogOut,
   Menu,
   X,
-  ChevronRight,
   ArrowUpRight,
-  ShieldCheck,
+  Search,
+  Home,
+  Package,
+  PlusCircle,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth, API_BASE_URL } from "../context/AuthContext.jsx";
@@ -25,9 +26,18 @@ const STUDENT_NAV = [
   {
     section: "STUDENT WORKSPACE",
     items: [
-      { label: "Dashboard Overview", to: "/dashboard", icon: LayoutDashboard, end: true },
-      { label: "My Reports", to: "/dashboard/reports", icon: FileText },
+      { label: "Dashboard", to: "/dashboard", icon: Home, end: true },
+      { label: "My Reports", to: "/dashboard/reports", icon: Package },
+      { label: "Browse Found Items", to: "/found-items", icon: Search },
       { label: "My Claims", to: "/dashboard/claims", icon: HandCoins },
+      { label: "Notifications", to: "/notifications", icon: Bell, badge: true },
+    ]
+  },
+  {
+    section: "QUICK ACTIONS",
+    items: [
+      { label: "Report Lost Item", to: "/report-lost", icon: PlusCircle },
+      { label: "Report Found Item", to: "/report-found", icon: PlusCircle },
     ]
   }
 ];
@@ -37,6 +47,7 @@ const ADMIN_NAV = [
     section: "OVERVIEW",
     items: [
       { label: "Dashboard Overview", to: "/admin", icon: LayoutDashboard, end: true },
+      { label: "Notifications", to: "/notifications", icon: Bell, badge: true },
     ]
   },
   {
@@ -85,7 +96,7 @@ function DashboardContent() {
   const isAdmin = Boolean(user && (user.role === "admin" || user.is_admin));
   const navSections = isAdmin ? ADMIN_NAV : STUDENT_NAV;
 
-  // Notification Polling (every 30 seconds)
+  // Notification Polling (every 5 seconds + immediate event trigger)
   useEffect(() => {
     if (!user) return;
 
@@ -106,8 +117,13 @@ function DashboardContent() {
     };
 
     fetchUnread();
-    const interval = setInterval(fetchUnread, 30000);
-    return () => clearInterval(interval);
+    const interval = setInterval(fetchUnread, 5000);
+    window.addEventListener("foundit-refresh-notifications", fetchUnread);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("foundit-refresh-notifications", fetchUnread);
+    };
   }, [user, location.pathname]);
 
   const handleLogout = async (e) => {
@@ -121,6 +137,7 @@ function DashboardContent() {
     if (p === "/dashboard") return "Dashboard Overview";
     if (p === "/dashboard/reports") return "My Reports";
     if (p === "/dashboard/claims") return "My Claims";
+    if (p === "/notifications") return "Notifications Center";
     if (p === "/admin") return "Dashboard Overview";
     if (p === "/admin/reports") return "Lost & Found Reports";
     if (p === "/admin/users") return "User Directory";
@@ -204,6 +221,11 @@ function DashboardContent() {
               <div className="dash__user-role">
                 {displayRole}
               </div>
+              {user.roll_number && (
+                <div style={{ fontSize: "0.72rem", color: "rgba(255, 255, 255, 0.6)", marginTop: "2px", letterSpacing: "0.02em" }}>
+                  {user.roll_number}{user.stream ? ` • ${user.stream}` : ""}
+                </div>
+              )}
               <div className="dash__user-status">
                 <span className="dash__status-dot"></span>
                 <span>Online &bull; Verified</span>
@@ -238,8 +260,8 @@ function DashboardContent() {
             onClick={handleLogout}
             className="dash__logout"
           >
-            <LogOut size={16} strokeWidth={2} />
-            <span>Log out</span>
+            <LogOut size={16} strokeWidth={2.4} />
+            <span>LOGOUT</span>
           </button>
         </div>
 
@@ -281,9 +303,28 @@ function DashboardContent() {
             <h1 className="dash__breadcrumb-title">{getPageTitle()}</h1>
           </div>
 
+          {/* Reference Image Style Search Bar */}
+          <div className="dash__search-bar">
+            <Search size={15} className="dash__search-icon" />
+            <input
+              type="text"
+              placeholder="Search my reports &amp; claims..."
+              className="dash__search-input"
+              aria-label="Quick search"
+            />
+          </div>
+
           {/* Right Header Actions */}
           <div className="dash__header-actions">
             <NotificationDropdown unreadCount={unreadCount} setUnreadCount={setUnreadCount} />
+
+            {/* Profile Avatar Pill */}
+            <div className="dash__user-pill" title={displayName}>
+              <div className={`dash__user-pill-avatar ${isAdmin ? "dash__user-pill-avatar--admin" : ""}`}>
+                {userInitial}
+              </div>
+              <span className="dash__user-pill-name">{displayName}</span>
+            </div>
 
             <Link
               to="/"
@@ -298,7 +339,9 @@ function DashboardContent() {
 
         {/* Dashboard Dynamic Page View */}
         <main className="dash__main-inner">
-          <Outlet />
+          <div key={location.pathname} className="dash__page-fade">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

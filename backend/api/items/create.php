@@ -1,22 +1,19 @@
 <?php
 
 require_once('../../config/cors.php');
-session_start();
 header("Content-Type: application/json");
 require_once('../../config/database.php');
 require_once('../../services/MatchingEngine.php');
+require_once('../../services/NotificationService.php');
+require_once('../../middleware/auth.php');
+require_once('../../middleware/csrf.php');
 
-// Check authentication
-if (!isset($_SESSION["user_id"])) {
-    http_response_code(401);
-    echo json_encode([
-        "success" => false,
-        "message" => "Authentication required. Please log in."
-    ]);
-    exit;
-}
+// Strict server-side verification: authenticated + non-suspended user in MySQL
+$authenticatedUser = requireAuth($conn);
+$user_id = (int)$authenticatedUser["id"];
 
-$user_id = (int)$_SESSION["user_id"];
+// Enforce CSRF token validation on item creation
+validateCsrfToken($_POST);
 
 // Parse data (supports both multipart/form-data and JSON)
 $title = "";
@@ -31,7 +28,7 @@ if (isset($_POST["title"])) {
     $type = trim($_POST["type"] ?? "");
     $category = trim($_POST["category"] ?? "");
     $location = trim($_POST["location"] ?? "");
-    $item_date = trim($_POST["item_date"] ?? "");
+    $item_date = trim($_POST["item_date"] ?? $_POST["date"] ?? "");
     $description = trim($_POST["description"] ?? "");
 } else {
     $jsonData = json_decode(file_get_contents("php://input"), true);
@@ -40,7 +37,7 @@ if (isset($_POST["title"])) {
         $type = trim($jsonData["type"] ?? "");
         $category = trim($jsonData["category"] ?? "");
         $location = trim($jsonData["location"] ?? "");
-        $item_date = trim($jsonData["item_date"] ?? "");
+        $item_date = trim($jsonData["item_date"] ?? $jsonData["date"] ?? "");
         $description = trim($jsonData["description"] ?? "");
     }
 }
@@ -98,8 +95,8 @@ if (isset($_FILES["image"]) && $_FILES["image"]["error"] === UPLOAD_ERR_OK) {
         exit;
     }
     
-    $allowedMimes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-    $allowedExts = ["jpg", "jpeg", "png", "webp", "gif"];
+    $allowedMimes = ["image/jpeg", "image/png", "image/webp"];
+    $allowedExts = ["jpg", "jpeg", "png", "webp"];
     
     $fileInfo = pathinfo($fileName);
     $ext = strtolower($fileInfo["extension"] ?? "");
@@ -110,16 +107,24 @@ if (isset($_FILES["image"]) && $_FILES["image"]["error"] === UPLOAD_ERR_OK) {
     
     if (!in_array($detectedMime, $allowedMimes) || !in_array($ext, $allowedExts)) {
         http_response_code(400);
-        echo json_encode(["success" => false, "message" => "Invalid image format. Allowed formats: JPG, PNG, WEBP, GIF."]);
+        echo json_encode(["success" => false, "message" => "Invalid image format. Only JPG, PNG, and WEBP formats are accepted."]);
+        exit;
+    }
+
+    // Verify true image structure and dimensions to block polyglot script payloads
+    $imgSize = @getimagesize($fileTmpPath);
+    if ($imgSize === false || empty($imgSize[0]) || empty($imgSize[1])) {
+        http_response_code(400);
+        echo json_encode(["success" => false, "message" => "Uploaded file is not a valid image or is corrupted."]);
         exit;
     }
     
     $uploadDir = __DIR__ . "/../../uploads/";
     if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0777, true);
+        mkdir($uploadDir, 0755, true);
     }
     
-    $newFileName = "item_" . time() . "_" . bin2hex(random_bytes(4)) . "." . $ext;
+    $newFileName = "item_" . time() . "_" . bin2hex(random_bytes(8)) . "." . $ext;
     $destPath = $uploadDir . $newFileName;
     
     if (move_uploaded_file($fileTmpPath, $destPath)) {
@@ -130,8 +135,9 @@ if (isset($_FILES["image"]) && $_FILES["image"]["error"] === UPLOAD_ERR_OK) {
         exit;
     }
 }
-
-$status = "active";
+// Student reports require administrative verification before becoming active.
+// Admin submissions are published immediately.
+$status = (($authenticatedUser["role"] ?? "") === "admin") ? "active" : "pending";
 
 $stmt = $conn->prepare(
     "INSERT INTO items (user_id, type, title, description, category, location, item_date, image, status)
@@ -159,6 +165,30 @@ if ($stmt->execute()) {
         MatchingEngine::runForItem($conn, $item_id);
     } catch (\Throwable $e) {
         error_log("MatchingEngine error: " . $e->getMessage());
+    }
+
+    // Notify campus administrators about the new pending report
+    try {
+        $adminQuery = $conn->query("SELECT id FROM users WHERE role = 'admin'");
+        if ($adminQuery) {
+            while ($adminRow = $adminQuery->fetch_assoc()) {
+                $adminId = (int)$adminRow["id"];
+                if ($adminId !== $user_id) {
+                    NotificationService::create(
+                        $conn,
+                        $adminId,
+                        "New " . ucfirst($type) . " Report: " . $title,
+                        "A student reported a " . $type . " item '" . $title . "' (" . ($location ?: "Campus") . ").",
+                        "report_created",
+                        $item_id,
+                        null,
+                        false
+                    );
+                }
+            }
+        }
+    } catch (\Throwable $e) {
+        error_log("Admin report notification error: " . $e->getMessage());
     }
 
     http_response_code(201);

@@ -1,19 +1,25 @@
-import { useState, useMemo } from "react";
-import { Search, Eye, ClipboardList, Filter } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { Search, Eye, ClipboardList, Trash2, ExternalLink } from "lucide-react";
 import Badge from "../components/Badge.jsx";
 import EmptyState from "../components/EmptyState.jsx";
 import ItemDetailsModal from "../components/admin/ItemDetailsModal.jsx";
 import MarkFoundModal from "../components/admin/MarkFoundModal.jsx";
+import AdminSyncBadge from "../components/admin/AdminSyncBadge.jsx";
 import { useAdmin } from "../context/AdminContext.jsx";
 
 export default function ManageReports() {
-  const { items, approveReport, rejectReport, markAsFound, markAsReturned } = useAdmin();
+  const { items, approveReport, rejectReport, markAsFound, markAsReturned, deleteReport, refreshAdminData } = useAdmin();
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [selectedItem, setSelectedItem] = useState(null);
   const [markFoundTarget, setMarkFoundTarget] = useState(null);
+
+  useEffect(() => {
+    refreshAdminData();
+  }, [refreshAdminData]);
 
   // Extract unique categories
   const categories = useMemo(() => {
@@ -40,12 +46,15 @@ export default function ManageReports() {
 
   return (
     <div className="dash-page">
-      <div className="dash-page__header">
-        <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: "var(--navy-900)", fontWeight: 700, fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>
-          <ClipboardList size={15} /> Management Registry
+      <div className="dash-page__header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "16px" }}>
+        <div>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: "#7c3aed", fontWeight: 700, fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>
+            <ClipboardList size={15} /> Management Registry
+          </div>
+          <h1>Lost &amp; Found Reports</h1>
+          <p>Centralized institutional directory of all campus items, submission statuses, and moderation histories.</p>
         </div>
-        <h1>Lost &amp; Found Reports</h1>
-        <p>Centralized institutional directory of all campus items, submission statuses, and moderation histories.</p>
+        <AdminSyncBadge />
       </div>
 
       {/* Filter toolbar */}
@@ -92,10 +101,12 @@ export default function ManageReports() {
           <select className="select" style={{ width: "auto", minWidth: "140px" }} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
             <option value="all">All Statuses</option>
             <option value="active">Active</option>
+            <option value="pending">Pending</option>
             <option value="under_review">Under Review</option>
             <option value="matched">Matched</option>
             <option value="claimed">Claimed</option>
             <option value="resolved">Resolved</option>
+            <option value="rejected">Rejected</option>
           </select>
         </div>
       </div>
@@ -125,25 +136,47 @@ export default function ManageReports() {
             <tbody>
               {filteredItems.map((item) => (
                 <tr key={item.id}>
-                  <td style={{ fontFamily: "var(--font-mono)", fontSize: "0.82rem", color: "var(--slate-500)", fontWeight: 700 }}>#{item.id}</td>
+                  <td style={{ fontFamily: "var(--font-mono)", fontSize: "0.82rem", color: "#7c3aed", fontWeight: 700 }}>#{item.id}</td>
                   <td>
-                    <div style={{ fontWeight: 700, color: "var(--ink)", fontSize: "0.92rem" }}>{item.title}</div>
-                    <div style={{ fontSize: "0.76rem", color: "var(--slate-500)", marginTop: "2px" }}>{item.category || "General"}</div>
+                    <div style={{ fontWeight: 700, color: "#0f172a", fontSize: "0.92rem" }}>{item.title}</div>
+                    <div style={{ fontSize: "0.76rem", color: "#64748b", marginTop: "2px" }}>{item.category || "General"}</div>
                   </td>
                   <td><Badge status={item.type} /></td>
-                  <td style={{ fontSize: "0.86rem", color: "var(--slate-600)" }}>{item.location || "Campus"}</td>
-                  <td style={{ fontSize: "0.86rem", color: "var(--slate-700)", fontWeight: 500 }}>{item.reporter || "Student"}</td>
-                  <td style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--slate-500)" }}>{item.date || "Recent"}</td>
+                  <td style={{ fontSize: "0.86rem", color: "#475569" }}>{item.location || "Campus"}</td>
+                  <td style={{ fontSize: "0.86rem", color: "#1e293b", fontWeight: 500 }}>{item.reporter || "Student"}</td>
+                  <td style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "#64748b" }}>{item.date || "Recent"}</td>
                   <td><Badge status={item.status || "active"} /></td>
                   <td style={{ textAlign: "right" }}>
-                    <button
-                      className="btn btn--outline btn--sm"
-                      style={{ padding: "4px 10px", fontSize: "0.78rem" }}
-                      title="Inspect Report Details"
-                      onClick={() => setSelectedItem(item)}
-                    >
-                      <Eye size={13} /> View
-                    </button>
+                    <div style={{ display: "inline-flex", gap: "6px" }}>
+                      <Link
+                        to={`/items/${item.id}`}
+                        className="btn btn--outline btn--sm"
+                        style={{ padding: "4px 8px", fontSize: "0.78rem", display: "inline-flex", alignItems: "center", gap: "3px" }}
+                        title="View Public Card"
+                      >
+                        Public Card <ExternalLink size={12} />
+                      </Link>
+                      <button
+                        className="btn btn--outline btn--sm"
+                        style={{ padding: "4px 10px", fontSize: "0.78rem" }}
+                        title="Inspect Report Details"
+                        onClick={() => setSelectedItem(item)}
+                      >
+                        <Eye size={13} /> View
+                      </button>
+                      <button
+                        className="btn btn--danger-outline btn--sm"
+                        style={{ padding: "4px 8px" }}
+                        title="Delete Report"
+                        onClick={() => {
+                          if (window.confirm(`Are you sure you want to permanently delete report #${item.id} "${item.title}"?`)) {
+                            deleteReport(item.id);
+                          }
+                        }}
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -164,6 +197,7 @@ export default function ManageReports() {
           setMarkFoundTarget(items.find((i) => i.id === id));
         }}
         onMarkReturned={markAsReturned}
+        onDeleteReport={deleteReport}
       />
 
       <MarkFoundModal

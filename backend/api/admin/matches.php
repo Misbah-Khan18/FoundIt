@@ -1,36 +1,22 @@
 <?php
 
 require_once('../../config/cors.php');
-session_start();
 header("Content-Type: application/json");
 require_once('../../config/database.php');
 require_once('../../services/MatchingEngine.php');
 require_once('../../services/NotificationService.php');
+require_once('../../middleware/auth.php');
+require_once('../../middleware/csrf.php');
 
-// 1. Strict Server-Side Authentication & Authorization Check
-if (!isset($_SESSION["user_id"])) {
-    http_response_code(401);
-    echo json_encode([
-        "success" => false,
-        "message" => "Unauthorized: Authentication required."
-    ]);
-    exit;
-}
-
-if (($_SESSION["role"] ?? "") !== "admin") {
-    http_response_code(403);
-    echo json_encode([
-        "success" => false,
-        "message" => "Forbidden: Administrator privileges required."
-    ]);
-    exit;
-}
+// Strict server-side verification: authenticated + non-suspended + admin role in MySQL
+$adminId = requireAdmin($conn);
 
 $method = $_SERVER['REQUEST_METHOD'];
 
 // Handle POST: Update Match Status (confirmed, rejected, reviewed)
 if ($method === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
+    validateCsrfToken($input);
     
     $matchId = $input['match_id'] ?? $input['id'] ?? null;
     $status  = trim($input['status'] ?? '');
@@ -192,7 +178,7 @@ if ($method === 'GET') {
         JOIN items f ON m.found_item_id = f.id
         LEFT JOIN users lu ON l.user_id = lu.id
         LEFT JOIN users fu ON f.user_id = fu.id
-        WHERE m.overall_score >= 40.0 AND l.status != 'resolved' AND f.status != 'resolved'
+        WHERE m.overall_score >= 35.0 AND l.status != 'resolved' AND f.status != 'resolved'
         ORDER BY m.overall_score DESC
     ";
 
@@ -208,20 +194,23 @@ if ($method === 'GET') {
             $overall   = (float)$row['overall_score'];
 
             $matchFactors = [];
-            if ($descScore > 50) {
-                $matchFactors[] = ["label" => "High Description Similarity ({$descScore}%)", "matched" => true];
+            if (!empty($row['lost_category']) && !empty($row['found_category']) && strtolower($row['lost_category']) === strtolower($row['found_category'])) {
+                $matchFactors[] = ["label" => "Identical Category (" . $row['lost_category'] . ")", "matched" => true];
             }
-            if ($imgScore > 50) {
-                $matchFactors[] = ["label" => "Visual Feature Similarity ({$imgScore}%)", "matched" => true];
+            if ($descScore >= 50) {
+                $matchFactors[] = ["label" => "High Text & Keyword Similarity ({$descScore}%)", "matched" => true];
             }
-            if ($locScore > 50) {
-                $matchFactors[] = ["label" => "Location Proximity ({$locScore}%)", "matched" => true];
+            if ($imgScore >= 50) {
+                $matchFactors[] = ["label" => "Visual Feature Match ({$imgScore}%)", "matched" => true];
             }
-            if ($dateScore > 50) {
+            if ($locScore >= 50) {
+                $matchFactors[] = ["label" => "Location Proximity Match ({$locScore}%)", "matched" => true];
+            }
+            if ($dateScore >= 60) {
                 $matchFactors[] = ["label" => "Temporal Proximity ({$dateScore}%)", "matched" => true];
             }
             if (empty($matchFactors)) {
-                $matchFactors[] = ["label" => "General Category & Attribute Alignment", "matched" => true];
+                $matchFactors[] = ["label" => "General Attribute & Keyword Alignment ({$overall}%)", "matched" => true];
             }
 
             $matches[] = [

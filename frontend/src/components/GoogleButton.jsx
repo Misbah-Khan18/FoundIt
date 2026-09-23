@@ -11,30 +11,32 @@ export default function GoogleButton({ onClick, loading = false, disabled = fals
         justifyContent: "center",
         gap: "12px",
         padding: "11px 16px",
-        borderRadius: "8px",
-        border: "1px solid var(--border-light, #e2e8f0)",
-        background: "#ffffff",
-        color: "var(--ink, #1e293b)",
+        borderRadius: "10px",
+        border: "1px solid rgba(168, 85, 247, 0.25)",
+        background: "rgba(255, 255, 255, 0.05)",
+        color: "#ffffff",
         fontFamily: "inherit",
         fontSize: "0.92rem",
         fontWeight: 600,
         cursor: loading || disabled ? "not-allowed" : "pointer",
         opacity: loading || disabled ? 0.75 : 1,
-        boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
-        transition: "all 0.15s ease",
+        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
+        transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
       }}
       onMouseEnter={(e) => {
         if (!loading && !disabled) {
-          e.currentTarget.style.background = "var(--ivory, #f7f9fc)";
-          e.currentTarget.style.borderColor = "var(--slate-400, #94a3b8)";
-          e.currentTarget.style.boxShadow = "var(--shadow-sm, 0 2px 4px rgba(0, 0, 0, 0.06))";
+          e.currentTarget.style.background = "rgba(168, 85, 247, 0.14)";
+          e.currentTarget.style.borderColor = "rgba(168, 85, 247, 0.55)";
+          e.currentTarget.style.boxShadow = "0 0 20px rgba(168, 85, 247, 0.25)";
+          e.currentTarget.style.transform = "translateY(-1px)";
         }
       }}
       onMouseLeave={(e) => {
         if (!loading && !disabled) {
-          e.currentTarget.style.background = "#ffffff";
-          e.currentTarget.style.borderColor = "var(--border-light, #e2e8f0)";
-          e.currentTarget.style.boxShadow = "0 1px 2px rgba(0, 0, 0, 0.05)";
+          e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+          e.currentTarget.style.borderColor = "rgba(168, 85, 247, 0.25)";
+          e.currentTarget.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.2)";
+          e.currentTarget.style.transform = "translateY(0)";
         }
       }}
     >

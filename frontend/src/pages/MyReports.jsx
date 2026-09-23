@@ -93,11 +93,13 @@ export default function MyReports() {
                 borderRadius: "8px",
                 fontSize: "0.82rem",
                 fontWeight: 600,
-                border: filterType === t ? "1.5px solid var(--navy-900)" : "1px solid var(--border-light)",
-                background: filterType === t ? "var(--navy-900)" : "#ffffff",
-                color: filterType === t ? "#ffffff" : "var(--slate-600)",
+                border: filterType === t ? "1.5px solid #7c3aed" : "1.5px solid #e2e8f0",
+                background: filterType === t ? "#7c3aed" : "#ffffff",
+                color: filterType === t ? "#ffffff" : "#475569",
+                boxShadow: filterType === t ? "0 2px 8px rgba(124, 58, 237, 0.25)" : "none",
                 cursor: "pointer",
                 textTransform: "capitalize",
+                transition: "all 0.15s ease",
               }}
             >
               {t === "all" ? "All Types" : `${t} Items`}
@@ -110,7 +112,15 @@ export default function MyReports() {
             className="select"
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            style={{ padding: "6px 12px", fontSize: "0.84rem", width: "auto" }}
+            style={{
+              padding: "6px 12px",
+              fontSize: "0.84rem",
+              width: "auto",
+              background: "#ffffff",
+              color: "#0f172a",
+              border: "1.5px solid #d8b4fe",
+              borderRadius: "8px",
+            }}
           >
             <option value="all">All Statuses</option>
             <option value="active">Active</option>
@@ -145,20 +155,20 @@ export default function MyReports() {
                     <span style={{ fontSize: "0.78rem", color: "var(--slate-500)" }}>• {item.category || "General"}</span>
                   </div>
 
-                  <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.2rem", fontWeight: 700, margin: "6px 0", color: "var(--ink)" }}>
+                  <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.2rem", fontWeight: 700, margin: "6px 0", color: "#0f172a" }}>
                     {item.title}
                   </h2>
 
-                  <p style={{ fontSize: "0.9rem", color: "var(--slate-600)", margin: "0 0 12px", lineHeight: 1.5, maxWidth: "68ch" }}>
+                  <p style={{ fontSize: "0.9rem", color: "#475569", margin: "0 0 12px", lineHeight: 1.5, maxWidth: "68ch" }}>
                     {item.description}
                   </p>
 
-                  <div style={{ display: "flex", alignItems: "center", gap: "16px", fontSize: "0.84rem", color: "var(--slate-500)", flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "16px", fontSize: "0.84rem", color: "#64748b", flexWrap: "wrap" }}>
                     <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-                      <MapPin size={14} /> {item.location || "Campus Area"}
+                      <MapPin size={14} color="#ef4444" /> {item.location || "Campus Area"}
                     </span>
                     <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-                      <Calendar size={14} /> {item.date || item.item_date || "Recent"}
+                      <Calendar size={14} color="#d97706" /> {item.date || item.item_date || "Recent"}
                     </span>
                   </div>
                 </div>
@@ -172,8 +182,8 @@ export default function MyReports() {
               </div>
 
               {/* Status Timeline */}
-              <div style={{ marginTop: "16px", paddingTop: "14px", borderTop: "1px solid var(--border-light)" }}>
-                <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--slate-500)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "4px" }}>
+              <div style={{ marginTop: "16px", paddingTop: "14px", borderTop: "1px solid rgba(139, 92, 246, 0.12)" }}>
+                <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "4px" }}>
                   Verification &amp; Handover Progress
                 </div>
                 <StatusTimeline status={item.status || "active"} itemType={item.type} />

@@ -1,34 +1,37 @@
 /* ==========================================================================
-   MIT-WPU FoundIt — Premium SaaS Dashboard Layout Design System
+   MIT-WPU FoundIt — Premium Dashboard Layout Design System
+   Style: Dark Purple Sidebar + Off-White Canvas + Frosted Glass Cards
    ========================================================================== */
 
 .dash {
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);
   min-height: 100vh;
-  background-color: #f8fafc;
+  background: linear-gradient(180deg, #0d0722 0%, #150d36 60%, #0d0722 100%) no-repeat left top / 260px 100%, #f5f6fa;
   color: #0f172a;
   position: relative;
-  overflow-x: hidden;
 }
 
 /* --------------------------------------------------------------------------
-   SIDEBAR
+   DARK PURPLE SIDEBAR
    -------------------------------------------------------------------------- */
 .dash__sidebar {
-  background: linear-gradient(180deg, #0b1329 0%, #070e20 100%);
-  border-right: 1px solid rgba(255, 255, 255, 0.07);
+  background: linear-gradient(180deg, #0d0722 0%, #150d36 60%, #0d0722 100%);
+  border-right: 1px solid rgba(168, 85, 247, 0.16);
   padding: 24px 16px 20px;
   display: flex;
   flex-direction: column;
   position: sticky;
   top: 0;
   height: 100vh;
+  min-height: 100%;
+  align-self: stretch;
   z-index: 120;
   box-sizing: border-box;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+  scrollbar-color: rgba(168, 85, 247, 0.25) transparent;
+  color: #ffffff;
 }
 
 .dash__sidebar::-webkit-scrollbar {
@@ -36,7 +39,7 @@
 }
 
 .dash__sidebar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(168, 85, 247, 0.25);
   border-radius: 4px;
 }
 
@@ -58,15 +61,15 @@
 
 /* Official MIT-WPU Circular White Badge */
 .dash__brand-mark {
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   background-color: #ffffff;
   padding: 3px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 12px rgba(168, 85, 247, 0.3);
   flex-shrink: 0;
   overflow: hidden;
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -100,7 +103,7 @@
 .dash__brand-subtitle {
   font-size: 0.65rem;
   font-weight: 700;
-  color: #7d90b2;
+  color: #a78bfa;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   margin-top: 3px;
@@ -118,35 +121,35 @@
 
 .dash__close-drawer-btn:hover {
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(168, 85, 247, 0.15);
 }
 
-/* User Profile Card */
+/* User Profile Card inside Sidebar */
 .dash__user-card {
   padding: 12px 14px;
   margin-bottom: 22px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(168, 85, 247, 0.18);
   border-radius: 12px;
   display: flex;
   align-items: center;
   gap: 12px;
   backdrop-filter: blur(10px);
-  transition: background-color 0.2s ease, border-color 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .dash__user-card:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(168, 85, 247, 0.1);
+  border-color: rgba(168, 85, 247, 0.35);
 }
 
 .dash__user-avatar {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(37, 99, 235, 0.15));
-  color: #60a5fa;
-  border: 1px solid rgba(96, 165, 250, 0.3);
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.35), rgba(99, 102, 241, 0.25));
+  color: #d8b4fe;
+  border: 1px solid rgba(168, 85, 247, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -156,9 +159,9 @@
 }
 
 .dash__user-avatar--admin {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.15));
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.35), rgba(168, 85, 247, 0.25));
   color: #fbbf24;
-  border-color: rgba(245, 158, 11, 0.35);
+  border-color: rgba(245, 158, 11, 0.45);
 }
 
 .dash__user-info {
@@ -179,7 +182,7 @@
 
 .dash__user-role {
   font-size: 0.7rem;
-  color: #8da2c4;
+  color: #c4b5fd;
   margin-top: 1px;
   white-space: nowrap;
   overflow: hidden;
@@ -236,7 +239,7 @@
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #556788;
+  color: #a78bfa;
   padding: 4px 12px 6px;
 }
 
@@ -252,24 +255,24 @@
   align-items: center;
   gap: 11px;
   padding: 10px 14px;
-  border-radius: 10px;
-  font-size: 0.87rem;
+  border-radius: 12px;
+  font-size: 0.88rem;
   font-weight: 500;
-  color: #8fa0c2;
+  color: #94a3b8;
   text-decoration: none;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
 }
 
 .dash__link:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(168, 85, 247, 0.14);
   color: #ffffff;
   transform: translateX(2px);
 }
 
 .dash__link-icon {
   flex-shrink: 0;
-  color: #7b8eaec0;
+  color: #a78bfa;
   transition: color 0.2s ease, transform 0.2s ease;
 }
 
@@ -295,12 +298,12 @@
   box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
 }
 
-/* Active Nav State - Glowing Blue SaaS Accent */
+/* Active Nav State — Reference Image Style Vibrant Violet Capsule */
 .dash__link--active {
-  background: linear-gradient(90deg, #2563eb 0%, #1d4ed8 100%) !important;
+  background: linear-gradient(135deg, #7c3aed 0%, #9333ea 50%, #a855f7 100%) !important;
   color: #ffffff !important;
   font-weight: 600;
-  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .dash__link--active .dash__link-icon {
@@ -311,36 +314,42 @@
 .dash__sidebar-actions {
   margin-top: 14px;
   padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(168, 85, 247, 0.12);
 }
 
 .dash__logout {
-  background: none;
-  border: none;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.22) 0%, rgba(168, 85, 247, 0.16) 100%);
+  border: 1px solid rgba(168, 85, 247, 0.35);
   cursor: pointer;
   width: 100%;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
-  padding: 10px 14px;
-  border-radius: 10px;
-  font-size: 0.86rem;
-  font-weight: 500;
-  color: #8fa0c2;
-  transition: all 0.2s ease;
+  padding: 11px 18px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(13, 7, 34, 0.4);
 }
 
 .dash__logout:hover {
-  background: rgba(239, 68, 68, 0.12);
-  color: #f87171;
-  transform: translateX(2px);
+  background: linear-gradient(135deg, #7c3aed 0%, #9333ea 100%);
+  border-color: #c084fc;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.45);
 }
 
 /* MIT-WPU University Watermark Footer */
 .dash__sidebar-footer {
   margin-top: 16px;
   padding: 16px 12px 6px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid rgba(168, 85, 247, 0.12);
   text-align: center;
   position: relative;
 }
@@ -348,42 +357,47 @@
 .dash__footer-svg {
   width: 100%;
   height: 28px;
-  color: #3b82f6;
+  color: #a855f7;
   margin-bottom: 6px;
 }
 
 .dash__footer-brand {
   font-weight: 800;
   font-size: 0.8rem;
-  color: #8ba0c4;
+  color: #c084fc;
   letter-spacing: 0.08em;
 }
 
 .dash__footer-motto {
   font-size: 0.65rem;
-  color: #556788;
+  color: #94a3b8;
   margin-top: 2px;
   letter-spacing: 0.03em;
 }
 
 /* --------------------------------------------------------------------------
-   DASHBOARD BODY & TOP NAVBAR
+   MAIN BODY & TOP NAVBAR (FROSTED LIGHT GLASS THEME)
    -------------------------------------------------------------------------- */
 .dash__body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
   min-width: 0;
-  background-color: #f8fafc;
+  background-color: #f5f6fa;
+  background-image: 
+    radial-gradient(circle at 90% 0%, rgba(139, 92, 246, 0.06) 0%, transparent 45%),
+    radial-gradient(circle at 10% 25%, rgba(99, 102, 241, 0.03) 0%, transparent 40%);
+  color: #0f172a;
 }
 
-/* Top Sticky Header */
+/* Top Sticky Header — Translucent Frosted Glass */
 .dash__header {
-  padding: 16px 36px;
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  padding: 14px 32px;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(139, 92, 246, 0.12);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -409,17 +423,57 @@
 
 .dash__breadcrumb-divider {
   font-size: 0.85rem;
-  color: #cbd5e1;
+  color: rgba(139, 92, 246, 0.3);
 }
 
 .dash__breadcrumb-title {
   font-family: var(--font-display);
-  font-size: 0.98rem;
+  font-size: 1.15rem;
   font-weight: 700;
   color: #0f172a;
   margin: 0;
   white-space: nowrap;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
+}
+
+/* Pill Search Bar — Modeled after Reference Image */
+.dash__search-bar {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: #ffffff;
+  border: 1px solid rgba(139, 92, 246, 0.18);
+  border-radius: 999px;
+  padding: 8px 18px;
+  width: 280px;
+  max-width: 100%;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+  transition: all 0.2s ease;
+}
+
+.dash__search-bar:focus-within {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15), 0 2px 8px rgba(15, 23, 42, 0.06);
+  width: 320px;
+}
+
+.dash__search-icon {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.dash__search-input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.84rem;
+  color: #0f172a;
+  width: 100%;
+  font-family: var(--font-body);
+}
+
+.dash__search-input::placeholder {
+  color: #94a3b8;
 }
 
 .dash__header-actions {
@@ -429,38 +483,252 @@
   flex-shrink: 0;
 }
 
+/* User Pill in Header — Reference Style */
+.dash__user-pill {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 4px 12px 4px 4px;
+  background: #ffffff;
+  border: 1px solid rgba(139, 92, 246, 0.18);
+  border-radius: 999px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.dash__user-pill-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f3e8ff, #ede9fe);
+  color: #7c3aed;
+  border: 1px solid rgba(124, 58, 237, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.78rem;
+  flex-shrink: 0;
+}
+
+.dash__user-pill-avatar--admin {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  color: #d97706;
+  border-color: rgba(217, 119, 6, 0.3);
+}
+
+.dash__user-pill-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Public Portal Button */
 .dash__public-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 8px 14px;
-  background: #ffffff;
-  color: #1e293b;
+  background: rgba(243, 232, 255, 0.8);
+  color: #7c3aed;
   font-size: 0.82rem;
   font-weight: 600;
   text-decoration: none;
-  border: 1px solid #e2e8f0;
-  border-radius: 9px;
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  border-radius: 10px;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(8px);
 }
 
 .dash__public-btn:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
-  color: #2563eb;
+  background: #7c3aed;
+  color: #ffffff;
   transform: translateY(-1px);
-  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.25);
 }
 
-/* Main Inner Wrapper - Fluid 100% Screen Fit */
+/* Main Inner Wrapper */
 .dash__main-inner {
   flex: 1;
   padding: 24px 32px 50px;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
+}
+
+/* Page Level Fade-In Transition */
+.dash__page-fade {
+  animation: dashPageFadeIn 0.35s ease-out;
+  width: 100%;
+}
+
+@keyframes dashPageFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   DASHBOARD-WIDE LIGHT GLASSMORPHISM OVERRIDES
+   -------------------------------------------------------------------------- */
+.dash__body h1,
+.dash__body h2,
+.dash__body h3,
+.dash__body h4 {
+  color: #0f172a;
+}
+
+.dash__body p {
+  color: #64748b;
+}
+
+/* Standard surface cards inside the dashboard */
+.dash__body .card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(139, 92, 246, 0.12);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.03);
+  color: #0f172a;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.dash__body .card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+  border-color: rgba(139, 92, 246, 0.25);
+}
+
+/* Form Controls inside Dashboard */
+.dash__body .input,
+.dash__body .select,
+.dash__body .textarea {
+  background: #ffffff;
+  border: 1.5px solid rgba(139, 92, 246, 0.18);
+  border-radius: 10px;
+  color: #0f172a;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+.dash__body .input::placeholder,
+.dash__body .textarea::placeholder {
+  color: #94a3b8;
+}
+
+.dash__body .input:focus,
+.dash__body .select:focus,
+.dash__body .textarea:focus {
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.14);
+  background: #ffffff;
+}
+
+/* Tables inside Dashboard */
+.dash__body .table-wrap {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(139, 92, 246, 0.12);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+  border-radius: 16px;
+}
+
+.dash__body .table th {
+  background: rgba(248, 249, 253, 0.95);
+  color: #475569;
+  font-weight: 700;
+  border-bottom: 1px solid rgba(139, 92, 246, 0.12);
+}
+
+.dash__body .table td {
+  color: #1e293b;
+  border-bottom: 1px solid rgba(139, 92, 246, 0.08);
+}
+
+.dash__body .table tr:hover td {
+  background: rgba(245, 243, 255, 0.5);
+}
+
+/* Empty states inside dashboard */
+.dash__body .empty-state__title {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.dash__body .empty-state__subtitle,
+.dash__body .empty-state p {
+  color: #64748b;
+}
+
+/* Button contrast inside Dashboard */
+.dash__body .btn--outline {
+  background: #ffffff;
+  color: #5b21b6 !important;
+  border: 1.5px solid #d8b4fe;
+}
+
+.dash__body .btn--outline:hover {
+  background: #f3e8ff;
+  color: #4c1d95 !important;
+  border-color: #c084fc;
+}
+
+.dash__body .btn--secondary {
+  background: #f3e8ff;
+  color: #6d28d9 !important;
+  border: 1.5px solid #d8b4fe;
+}
+
+.dash__body .btn--secondary:hover {
+  background: #ede9fe;
+  color: #4c1d95 !important;
+  border-color: #c084fc;
+}
+
+/* Page containers inside dashboard */
+.dash-page {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.dash-page__header {
+  margin-bottom: 2px;
+}
+
+.dash-page__header h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 4px;
+  letter-spacing: -0.02em;
+}
+
+.dash-page__header p {
+  font-size: 0.86rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.dash-page__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.dash-page__section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 /* --------------------------------------------------------------------------
@@ -479,7 +747,6 @@
     grid-template-columns: 1fr;
   }
 
-  /* Sticky Top Bar for Mobile */
   .dash__mobile-bar {
     display: flex;
     position: sticky;
@@ -488,9 +755,9 @@
     align-items: center;
     justify-content: space-between;
     padding: 12px 18px;
-    background: #ffffff;
-    border-bottom: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    background: #0d0722;
+    border-bottom: 1px solid rgba(168, 85, 247, 0.18);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
   }
 
   .dash__mobile-brand {
@@ -505,7 +772,6 @@
     border-radius: 50%;
     background: #ffffff;
     padding: 2px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -515,7 +781,7 @@
   .dash__mobile-title {
     font-weight: 800;
     font-size: 0.95rem;
-    color: #0f172a;
+    color: #ffffff;
     letter-spacing: -0.01em;
   }
 
@@ -526,45 +792,30 @@
   }
 
   .dash__mobile-btn {
-    background: #f1f5f9;
-    border: 1px solid #e2e8f0;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(168, 85, 247, 0.25);
     border-radius: 8px;
-    color: #0f172a;
+    color: #ffffff;
     padding: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: background 0.15s ease;
   }
 
-  .dash__mobile-btn:hover {
-    background: #e2e8f0;
-  }
-
-  /* Hide Desktop Header on Small Screens */
   .dash__header {
     display: none;
   }
 
-  /* Backdrop blur for mobile drawer */
   .dash__backdrop {
     display: block;
     position: fixed;
     inset: 0;
-    background: rgba(11, 19, 41, 0.65);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    background: rgba(7, 5, 18, 0.7);
+    backdrop-filter: blur(8px);
     z-index: 180;
-    animation: fadeInOverlay 0.25s ease;
   }
 
-  @keyframes fadeInOverlay {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-
-  /* Slide-out Drawer */
   .dash__sidebar {
     position: fixed;
     top: 0;
@@ -575,7 +826,7 @@
     z-index: 200;
     transform: translateX(-100%);
     transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.35);
+    box-shadow: 10px 0 40px rgba(0, 0, 0, 0.5);
   }
 
   .dash__sidebar--open {

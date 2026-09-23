@@ -3,30 +3,54 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { ArrowUpRight, Menu, X, User, LogOut } from "lucide-react";
 import logo from "../assets/logo.jpg";
 import { useAuth } from "../context/AuthContext.jsx";
-import { useAnimation } from "../context/AnimationContext.jsx";
 import "./Navbar.css";
 
 const NAV_LINKS = [
-  { label: "Home", to: "/", end: true },
-  { label: "How It Works", to: "/how-it-works" },
-  { label: "About", to: "/about" },
+  { label: "Home", id: "home" },
+  { label: "How It Works", id: "how-it-works" },
+  { label: "About", id: "about" },
 ];
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState("home");
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
-  const { stage, setLogoRef } = useAnimation();
 
   const isAdmin = user && (user.role === "admin" || user.is_admin);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
+    const onScroll = () => {
+      setScrolled(window.scrollY > 20);
+
+      // Section spy
+      const sections = ["home", "how-it-works", "about"];
+      const scrollPos = window.scrollY + 200;
+      for (let i = sections.length - 1; i >= 0; i--) {
+        const el = document.getElementById(sections[i]);
+        if (el && el.offsetTop <= scrollPos) {
+          setActiveSection(sections[i]);
+          break;
+        }
+      }
+    };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  const handleNavClick = (id) => {
+    setMenuOpen(false);
+    if (window.location.pathname !== "/") {
+      navigate(`/#${id}`);
+    } else {
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+  };
 
   const goLogin = () => {
     setMenuOpen(false);
@@ -55,10 +79,9 @@ export default function Navbar() {
           <span className="navbar__mark" aria-hidden="true">
             <img src={logo} alt="" className="navbar__mark-img" />
           </span>
-          <span className="navbar__title" style={{ display: "inline-flex", alignItems: "center", fontWeight: 800, fontSize: "1.38rem", letterSpacing: "-0.03em" }}>
-            <span>F</span>
+          <span className="navbar__title" style={{ display: "inline-flex", alignItems: "center", fontWeight: 800, fontSize: "1.38rem", letterSpacing: "-0.03em", color: "#ffffff" }}>
+            <span style={{ color: "#ffffff" }}>F</span>
             <span
-              ref={setLogoRef}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -70,40 +93,38 @@ export default function Navbar() {
                 verticalAlign: "middle"
               }}
             >
-              {stage === "settled" && (
-                <svg width="22" height="22" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ transformOrigin: "center center", animation: "scale-pop 250ms cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards" }}>
-                  <defs>
-                    <linearGradient id="lens-grad-logo" x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0%" stopColor="rgba(255, 255, 255, 0.5)" />
-                      <stop offset="100%" stopColor="rgba(52, 89, 163, 0.15)" />
-                    </linearGradient>
-                    <linearGradient id="handle-grad-logo" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#C9A548" />
-                      <stop offset="100%" stopColor="#A8863A" />
-                    </linearGradient>
-                  </defs>
-                  <rect x="58" y="58" width="10" height="34" rx="5" transform="rotate(-45 58 58)" fill="url(#handle-grad-logo)" stroke="#1E3674" strokeWidth="3.5" />
-                  <circle cx="42" cy="42" r="26" fill="url(#lens-grad-logo)" stroke="#1E3674" strokeWidth="6.5" />
-                  <path d="M24 30 C30 20, 44 18, 54 24" stroke="white" strokeWidth="3.5" strokeLinecap="round" opacity="0.65" />
-                  <circle cx="42" cy="42" r="21" stroke="white" strokeWidth="1.2" strokeDasharray="8 12" opacity="0.4" />
-                </svg>
-              )}
+              <svg width="22" height="22" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="lens-grad-logo" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="rgba(255, 255, 255, 0.45)" />
+                    <stop offset="100%" stopColor="rgba(255, 255, 255, 0.12)" />
+                  </linearGradient>
+                  <linearGradient id="handle-grad-logo" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#ffffff" />
+                    <stop offset="100%" stopColor="#e2e8f0" />
+                  </linearGradient>
+                </defs>
+                <rect x="58" y="58" width="10" height="34" rx="5" transform="rotate(-45 58 58)" fill="url(#handle-grad-logo)" stroke="#ffffff" strokeWidth="2.5" />
+                <circle cx="42" cy="42" r="26" fill="url(#lens-grad-logo)" stroke="#ffffff" strokeWidth="6" />
+                <path d="M24 30 C30 20, 44 18, 54 24" stroke="#ffffff" strokeWidth="3.5" strokeLinecap="round" opacity="0.85" />
+                <circle cx="42" cy="42" r="21" stroke="#ffffff" strokeWidth="1.2" strokeDasharray="8 12" opacity="0.5" />
+              </svg>
             </span>
-            <span style={{ color: "var(--navy-900)" }}>undIt</span>
+            <span style={{ color: "#ffffff" }}>undIt</span>
           </span>
         </NavLink>
 
         <div className="navbar__pill">
           <nav className="navbar__links" aria-label="Primary">
             {NAV_LINKS.map((link) => (
-              <NavLink
+              <button
                 key={link.label}
-                to={link.to}
-                end={link.end}
-                className={({ isActive }) => `navbar__link${isActive ? " navbar__link--active" : ""}`}
+                type="button"
+                onClick={() => handleNavClick(link.id)}
+                className={`navbar__link${activeSection === link.id ? " navbar__link--active" : ""}`}
               >
                 {link.label}
-              </NavLink>
+              </button>
             ))}
           </nav>
 
@@ -143,15 +164,14 @@ export default function Navbar() {
       {menuOpen && (
         <div className="navbar__mobile">
           {NAV_LINKS.map((link) => (
-            <NavLink
+            <button
               key={link.label}
-              to={link.to}
-              end={link.end}
-              className="navbar__mobile-link"
-              onClick={() => setMenuOpen(false)}
+              type="button"
+              className={`navbar__mobile-link${activeSection === link.id ? " active" : ""}`}
+              onClick={() => handleNavClick(link.id)}
             >
               {link.label}
-            </NavLink>
+            </button>
           ))}
 
           {isAuthenticated && user ? (

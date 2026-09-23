@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { ReportsProvider } from "./context/ReportsContext.jsx";
 import { AdminProvider } from "./context/AdminContext.jsx";
@@ -13,11 +13,11 @@ import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import Home from "./pages/Home.jsx";
 import LostItems from "./pages/LostItems.jsx";
 import FoundItems from "./pages/FoundItems.jsx";
-import About from "./pages/About.jsx";
-import HowItWorks from "./pages/HowItWorks.jsx";
 import ItemDetails from "./pages/ItemDetails.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
+import ForgotPassword from "./pages/ForgotPassword.jsx";
+import ResetPassword from "./pages/ResetPassword.jsx";
 import NotFound from "./pages/NotFound.jsx";
 
 // Protected student portal pages
@@ -49,15 +49,17 @@ export default function App() {
                   <Route path="/" element={<Home />} />
                   <Route path="/lost-items" element={<LostItems />} />
                   <Route path="/found-items" element={<FoundItems />} />
-                  <Route path="/about" element={<About />} />
-                  <Route path="/how-it-works" element={<HowItWorks />} />
+                  <Route path="/about" element={<Navigate to="/#about" replace />} />
+                  <Route path="/how-it-works" element={<Navigate to="/#how-it-works" replace />} />
                   <Route path="/items/:id" element={<ItemDetails />} />
                 </Route>
 
-                {/* Auth pages (login, register) */}
+                {/* Auth pages (login, register, forgot-password, reset-password) */}
                 <Route element={<AuthLayout />}>
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
                 </Route>
 
                 {/* Student/User Workspace (Protected) */}
@@ -67,6 +69,7 @@ export default function App() {
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/dashboard/reports" element={<MyReports />} />
                     <Route path="/dashboard/claims" element={<MyClaims />} />
+                    <Route path="/notifications" element={<Notifications />} />
                   </Route>
 
                   {/* Public-styled layouts that require login to submit reports */}
@@ -87,6 +90,10 @@ export default function App() {
                     <Route path="/admin/matches" element={<AdminMatches />} />
                   </Route>
                 </Route>
+
+                {/* Fallback aliases to prevent 404s on direct/legacy report links */}
+                <Route path="/my-reports" element={<Navigate to="/dashboard/reports" replace />} />
+                <Route path="/my-claims" element={<Navigate to="/dashboard/claims" replace />} />
 
                 <Route path="*" element={<NotFound />} />
               </Routes>

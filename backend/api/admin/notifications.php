@@ -1,19 +1,12 @@
 <?php
 
 require_once('../../config/cors.php');
-session_start();
 header("Content-Type: application/json");
 require_once('../../config/database.php');
+require_once('../../middleware/auth.php');
 
-// Strict server-side role check
-if (!isset($_SESSION["user_id"]) || ($_SESSION["role"] ?? "") !== "admin") {
-    http_response_code(403);
-    echo json_encode([
-        "success" => false,
-        "message" => "Forbidden: Administrator privileges required."
-    ]);
-    exit;
-}
+// Strict server-side verification: authenticated + non-suspended + admin role in MySQL
+$adminId = requireAdmin($conn);
 
 $notifications = [];
 
@@ -45,6 +38,26 @@ if ($claimRes) {
             "type" => "claim"
         ];
     }
+}
+
+// 3. Activity notifications for the administrator from notifications table
+$adminId = (int)$_SESSION["user_id"];
+$dbNotifs = $conn->prepare("SELECT id, title, message, type, is_read, created_at FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 15");
+if ($dbNotifs) {
+    $dbNotifs->bind_param("i", $adminId);
+    $dbNotifs->execute();
+    $dbRes = $dbNotifs->get_result();
+    while ($dn = $dbRes->fetch_assoc()) {
+        $notifications[] = [
+            "id" => "db-notif-" . $dn["id"],
+            "title" => $dn["title"],
+            "body" => $dn["message"],
+            "time" => date("M d, H:i", strtotime($dn["created_at"])),
+            "is_read" => (bool)$dn["is_read"],
+            "type" => $dn["type"] ?? "general"
+        ];
+    }
+    $dbNotifs->close();
 }
 
 echo json_encode([

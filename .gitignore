@@ -4,3 +4,8 @@
 node_modules/
 *.service-account.json
 serviceAccountKey.json
+
+# Local uploads and scratch files
+backend/uploads/*
+!backend/uploads/.htaccess
+scratch/

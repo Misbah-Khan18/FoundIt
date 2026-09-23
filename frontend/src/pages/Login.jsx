@@ -24,7 +24,11 @@ export default function Login() {
   // If already logged in, redirect accordingly
   useEffect(() => {
     if (isAuthenticated && user) {
-      navigate("/dashboard", { replace: true });
+      if (user.role === "admin" || user.is_admin) {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
     }
   }, [isAuthenticated, user, navigate]);
 
@@ -63,21 +67,18 @@ export default function Login() {
     setGoogleLoading(true);
 
     try {
-      await loginWithGoogle();
-
-      // Check if user came from attempting slot booking
-      const intendedSlot = location.state?.intendedSlot;
-      if (intendedSlot) {
-        navigate("/", { replace: true, state: { openSlot: intendedSlot } });
-        return;
-      }
+      const loggedUser = await loginWithGoogle();
 
       if (location.state?.from) {
         navigate(location.state.from, { replace: true });
         return;
       }
 
-      navigate("/dashboard", { replace: true });
+      if (loggedUser?.role === "admin") {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
     } catch (err) {
       setError(err.message || "Failed to sign in with Google.");
     } finally {
@@ -102,38 +103,36 @@ export default function Login() {
     setLoading(true);
 
     try {
-      await login(form.email, form.password);
+      const loggedUser = await login(form.email, form.password);
 
-      // Check if user came from attempting slot booking
-      const intendedSlot = location.state?.intendedSlot;
-      if (intendedSlot) {
-        navigate("/", { replace: true, state: { openSlot: intendedSlot } });
-        return;
-      }
-
+      // Check if user came from attempting an action
       if (location.state?.from) {
         navigate(location.state.from, { replace: true });
         return;
       }
 
-      navigate("/dashboard", { replace: true });
+      if (loggedUser && (loggedUser.role === "admin" || loggedUser.is_admin)) {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
     } catch (err) {
-      setError(err.message || "Invalid credentials. Please verify your email and password.");
+      setError(err.message || "Invalid email or password.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <FadeInSection>
+    <FadeInSection className="auth-card">
       <h1 className="auth-card__title">Welcome back</h1>
       <p className="auth-card__subtitle">
-        Log in to report and track lost and found items.
+        Enter your details to access the MIT-WPU Lost &amp; Found Portal.
       </p>
 
       {/* Success banner */}
       {successMessage && (
-        <div style={{ padding: "0.75rem 1rem", marginBottom: "1rem", borderRadius: "0.5rem", background: "rgba(16, 185, 129, 0.15)", color: "#10b981", border: "1px solid rgba(16, 185, 129, 0.3)", fontSize: "0.875rem" }}>
+        <div className="auth-success" style={{ marginBottom: "1rem" }}>
           {successMessage}
         </div>
       )}
@@ -146,7 +145,7 @@ export default function Login() {
       )}
 
       {/* Google Sign-In Button */}
-      <div style={{ marginBottom: "20px" }}>
+      <div style={{ margin: "20px 0 16px" }}>
         <GoogleButton onClick={handleGoogleLogin} loading={googleLoading} disabled={loading} text="Continue with Google" />
       </div>
 
@@ -164,9 +163,9 @@ export default function Login() {
           letterSpacing: "0.05em",
         }}
       >
-        <span style={{ flex: 1, height: "1px", background: "var(--border-light, #e2e8f0)" }} />
+        <span style={{ flex: 1, height: "1px", background: "rgba(168, 85, 247, 0.2)" }} />
         <span>or with credentials</span>
-        <span style={{ flex: 1, height: "1px", background: "var(--border-light, #e2e8f0)" }} />
+        <span style={{ flex: 1, height: "1px", background: "rgba(168, 85, 247, 0.2)" }} />
       </div>
 
       <form className="form" onSubmit={handleSubmit} noValidate>
@@ -199,6 +198,9 @@ export default function Login() {
             <label className="field__label" htmlFor="password">
               Password
             </label>
+            <Link to="/forgot-password" style={{ fontSize: "0.78rem", color: "#c084fc", fontWeight: 600, textDecoration: "none" }}>
+              Forgot password?
+            </Link>
           </div>
           <input
             id="password"

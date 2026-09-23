@@ -1,20 +1,12 @@
 <?php
 
 require_once('../../config/cors.php');
-session_start();
 header("Content-Type: application/json");
 require_once('../../config/database.php');
+require_once('../../middleware/auth.php');
 
-if (!isset($_SESSION["user_id"])) {
-    http_response_code(401);
-    echo json_encode([
-        "success" => false,
-        "message" => "Not logged in."
-    ]);
-    exit;
-}
-
-$user_id = (int)$_SESSION["user_id"];
+$authenticatedUser = requireAuth($conn);
+$user_id = (int)$authenticatedUser["id"];
 
 $stmt = $conn->prepare(
     "SELECT id, user_id, type, title, description, category, location, item_date as date, image, status, created_at

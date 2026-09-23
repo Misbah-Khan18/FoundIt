@@ -1,16 +1,21 @@
 <?php
 
 class MatchingEngine {
-    // Centralized Weights
+    // Centralized Weights (when both items have images)
     public const DESCRIPTION_WEIGHT = 0.45;
     public const IMAGE_WEIGHT       = 0.35;
     public const LOCATION_WEIGHT    = 0.10;
     public const DATE_WEIGHT        = 0.10;
 
+    // Normalized Weights (when one or both items lack images)
+    public const NO_IMG_DESC_WEIGHT = 0.70;
+    public const NO_IMG_LOC_WEIGHT  = 0.15;
+    public const NO_IMG_DATE_WEIGHT = 0.15;
+
     // Centralized Confidence Thresholds
-    public const CONFIDENCE_HIGH     = 80.0;
-    public const CONFIDENCE_MEDIUM   = 60.0;
-    public const CONFIDENCE_LOW      = 40.0;
+    public const CONFIDENCE_HIGH     = 75.0;
+    public const CONFIDENCE_MEDIUM   = 55.0;
+    public const CONFIDENCE_LOW      = 35.0;
 
     /**
      * Run matching for a single target item against all active opposite-type items.
@@ -81,20 +86,32 @@ class MatchingEngine {
      * Compare a lost item and a found item, calculate sub-scores & overall score,
      * and upsert into the database.
      */
-
     private static function processMatchPair($conn, $lostItem, $foundItem) {
         $descScore = self::calculateDescriptionScore($lostItem, $foundItem);
-        $imgScore  = self::calculateImageScore($lostItem, $foundItem);
         $locScore  = self::calculateLocationScore($lostItem['location'] ?? '', $foundItem['location'] ?? '');
         $dateScore = self::calculateDateScore($lostItem, $foundItem);
 
-        $overallScore = round(
-            ($descScore * self::DESCRIPTION_WEIGHT) +
-            ($imgScore  * self::IMAGE_WEIGHT) +
-            ($locScore  * self::LOCATION_WEIGHT) +
-            ($dateScore * self::DATE_WEIGHT),
-            2
-        );
+        $hasBothImages = !empty($lostItem['image']) && !empty($foundItem['image']);
+
+        if ($hasBothImages) {
+            $imgScore = self::calculateImageScore($lostItem, $foundItem);
+            $overallScore = round(
+                ($descScore * self::DESCRIPTION_WEIGHT) +
+                ($imgScore  * self::IMAGE_WEIGHT) +
+                ($locScore  * self::LOCATION_WEIGHT) +
+                ($dateScore * self::DATE_WEIGHT),
+                2
+            );
+        } else {
+            // Adaptive re-normalization: don't penalize items without photos
+            $imgScore = 0.0;
+            $overallScore = round(
+                ($descScore * self::NO_IMG_DESC_WEIGHT) +
+                ($locScore  * self::NO_IMG_LOC_WEIGHT) +
+                ($dateScore * self::NO_IMG_DATE_WEIGHT),
+                2
+            );
+        }
 
         $overallScore = min(100.0, max(0.0, $overallScore));
         $confidenceLevel = self::getConfidenceLevel($overallScore);
@@ -148,8 +165,7 @@ class MatchingEngine {
 
     /**
      * Calculate Description Similarity Score (0 - 100)
-     * Text normalization, stop-word removal, token overlap on Title (30%) + Description (70%),
-     * plus category match bonus.
+     * Text normalization, title-aware weighting, and category match bonus.
      */
     public static function calculateDescriptionScore($item1, $item2) {
         $t1 = strtolower(trim($item1['title'] ?? ''));
@@ -160,14 +176,28 @@ class MatchingEngine {
         $titleScore = self::calculateTextSimilarity($t1, $t2);
         $descScore  = self::calculateTextSimilarity($d1, $d2);
 
-        // 70% description, 30% title
-        $textScore = ($descScore * 0.70) + ($titleScore * 0.30);
+        // If either description is brief (< 12 chars), rely primarily on Title
+        if (strlen($d1) < 12 || strlen($d2) < 12) {
+            $textScore = ($titleScore * 0.80) + ($descScore * 0.20);
+        } else {
+            // When both descriptions are present, balance 50/50
+            $textScore = ($titleScore * 0.50) + ($descScore * 0.50);
+        }
 
-        // Category bonus (+15% if categories match)
+        // If Title is a strong match (>= 75%), ensure high floor
+        if ($titleScore >= 75.0 && $textScore < ($titleScore * 0.85)) {
+            $textScore = $titleScore * 0.85;
+        }
+
+        // Category bonus (+15% if exact match, +5% if general/other)
         $c1 = strtolower(trim($item1['category'] ?? ''));
         $c2 = strtolower(trim($item2['category'] ?? ''));
-        if (!empty($c1) && !empty($c2) && $c1 === $c2) {
-            $textScore += 15.0;
+        if (!empty($c1) && !empty($c2)) {
+            if ($c1 === $c2) {
+                $textScore += 15.0;
+            } elseif ($c1 === 'general' || $c1 === 'other' || $c2 === 'general' || $c2 === 'other') {
+                $textScore += 5.0;
+            }
         }
 
         return round(min(100.0, max(0.0, $textScore)), 2);
@@ -389,17 +419,27 @@ class MatchingEngine {
         $l2 = strtolower(trim($loc2));
 
         if (empty($l1) || empty($l2)) {
-            return 0.0;
+            return 25.0; // neutral baseline when location is not specified
         }
 
         if ($l1 === $l2) {
             return 100.0;
         }
 
-        // Check if one location is a substring of the other (e.g. "MIT-WPU Library" and "Library")
+        // Check if one location is a substring of the other (e.g. "Library" and "Central Library")
         if (stripos($l1, $l2) !== false || stripos($l2, $l1) !== false) {
             return 85.0;
         }
+
+        // Campus common central collection / security hubs
+        $campusHubs = ['main building', 'security desk', 'reception', 'canteen', 'cafeteria', 'ground floor'];
+        $isHub1 = false;
+        $isHub2 = false;
+        foreach ($campusHubs as $hub) {
+            if (stripos($l1, $hub) !== false) $isHub1 = true;
+            if (stripos($l2, $hub) !== false) $isHub2 = true;
+        }
+        $hubBaseline = ($isHub1 || $isHub2) ? 35.0 : 0.0;
 
         // Token overlap
         $stopWords = ['campus', 'building', 'near', 'at', 'in', 'the', 'room', 'floor', 'block', 'hall'];
@@ -410,7 +450,7 @@ class MatchingEngine {
         $tokens2 = array_values(array_diff(array_filter(explode(' ', $clean2)), $stopWords));
 
         if (empty($tokens1) || empty($tokens2)) {
-            return 0.0;
+            return $hubBaseline;
         }
 
         $intersect = array_intersect($tokens1, $tokens2);
@@ -421,7 +461,7 @@ class MatchingEngine {
             return round(min(100.0, max(50.0, $jaccard * 100.0)), 2);
         }
 
-        return 0.0;
+        return $hubBaseline;
     }
 
     /**

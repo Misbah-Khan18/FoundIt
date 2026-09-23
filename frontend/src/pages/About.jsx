@@ -1,38 +1,8 @@
-import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Layers, ShieldCheck, Cpu, ArrowRight } from "lucide-react";
+import { Layers, ShieldCheck, Cpu } from "lucide-react";
 import PageHero from "../components/PageHero.jsx";
 import AboutIllustration from "../components/graphics/AboutIllustration.jsx";
 import "./About.css";
-
-// A lightweight, performant count-up component using requestAnimationFrame
-function CountUp({ value, suffix = "", duration = 1800 }) {
-  const [count, setCount] = useState(0);
-
-  useEffect(() => {
-    let startTimestamp = null;
-    let animId;
-
-    const step = (timestamp) => {
-      if (!startTimestamp) startTimestamp = timestamp;
-      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-      // Easing function outQuad for smoother deceleration at the end
-      const easeProgress = progress * (2 - progress);
-      setCount(Math.floor(easeProgress * value));
-
-      if (progress < 1) {
-        animId = window.requestAnimationFrame(step);
-      } else {
-        setCount(value); // guarantee precise target value at completion
-      }
-    };
-
-    animId = window.requestAnimationFrame(step);
-    return () => window.cancelAnimationFrame(animId);
-  }, [value, duration]);
-
-  return <span>{count}{suffix}</span>;
-}
 
 export default function About() {
   return (

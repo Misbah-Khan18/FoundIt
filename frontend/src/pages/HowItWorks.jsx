@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Layers, ShieldCheck, Cpu, Star, Send, CheckCircle2 } from "lucide-react";
+import { useState } from "react";
+import { Layers, ShieldCheck, Cpu, Send, CheckCircle2 } from "lucide-react";
 import PageHero from "../components/PageHero.jsx";
 import "./About.css";
 import "./HowItWorks.css";

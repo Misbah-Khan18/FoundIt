@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { UploadCloud, CheckCircle2, X } from "lucide-react";
+import { UploadCloud, CheckCircle2, X, LayoutDashboard, FileText } from "lucide-react";
 import PageHero from "../components/PageHero.jsx";
 import { CATEGORIES, CAMPUS_LOCATIONS } from "../data/mockItems.js";
 import { useReports } from "../context/ReportsContext.jsx";
@@ -123,26 +123,28 @@ export default function ReportLost() {
             >
               <div
                 style={{
-                  width: "56px",
-                  height: "56px",
+                  width: "68px",
+                  height: "68px",
                   borderRadius: "50%",
-                  background: "rgba(30, 54, 116, 0.08)",
-                  color: "var(--navy-900)",
+                  background: "rgba(16, 185, 129, 0.16)",
+                  border: "2px solid rgba(16, 185, 129, 0.45)",
+                  color: "#34d399",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  marginBottom: "8px",
+                  marginBottom: "12px",
+                  boxShadow: "0 0 24px rgba(16, 185, 129, 0.35)",
                 }}
               >
-                <CheckCircle2 size={28} strokeWidth={2.2} />
+                <CheckCircle2 size={34} strokeWidth={2.4} />
               </div>
 
               <h2
                 style={{
                   fontFamily: "var(--font-display)",
                   fontWeight: 700,
-                  fontSize: "1.4rem",
-                  color: "var(--ink)",
+                  fontSize: "1.45rem",
+                  color: "#ffffff",
                   margin: 0,
                 }}
               >
@@ -152,21 +154,62 @@ export default function ReportLost() {
               <p
                 style={{
                   fontSize: "0.95rem",
-                  color: "var(--slate-500)",
-                  margin: "0 0 18px",
+                  color: "#94a3b8",
+                  margin: "0 0 20px",
                   maxWidth: "44ch",
+                  lineHeight: 1.5,
                 }}
               >
                 We'll notify you if a match is found.
               </p>
 
-              <button
-                type="button"
-                className="btn btn--emerald"
-                onClick={() => navigate("/my-reports")}
+              <div
+                style={{
+                  display: "flex",
+                  gap: "12px",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  width: "100%",
+                  maxWidth: "380px",
+                }}
               >
-                View My Reports
-              </button>
+                <button
+                  type="button"
+                  className="btn btn--emerald"
+                  onClick={() => navigate("/dashboard")}
+                  style={{
+                    flex: "1 1 170px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
+                    padding: "10px 18px",
+                    fontWeight: 600,
+                  }}
+                >
+                  <LayoutDashboard size={17} />
+                  Back to Dashboard
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--outline"
+                  onClick={() => navigate("/dashboard/reports")}
+                  style={{
+                    flex: "1 1 160px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
+                    padding: "10px 18px",
+                    color: "#ffffff",
+                    borderColor: "rgba(255, 255, 255, 0.2)",
+                  }}
+                >
+                  <FileText size={17} />
+                  View My Reports
+                </button>
+              </div>
             </div>
           ) : (
             <form className="form card report-form__card" onSubmit={handleSubmit}>
@@ -275,9 +318,9 @@ export default function ReportLost() {
                         position: "absolute",
                         top: "6px",
                         right: "6px",
-                        background: "rgba(30, 54, 116, 0.8)",
+                        background: "rgba(168, 85, 247, 0.8)",
                         color: "#fff",
-                        border: "none",
+                        border: "1px solid rgba(255, 255, 255, 0.2)",
                         borderRadius: "50%",
                         width: "24px",
                         height: "24px",

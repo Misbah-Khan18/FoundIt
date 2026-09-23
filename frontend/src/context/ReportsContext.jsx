@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { API_BASE_URL } from "./AuthContext.jsx";
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { API_BASE_URL, fetchWithCsrf } from "./AuthContext.jsx";
 
 
 const ReportsContext = createContext(null);
@@ -68,7 +68,7 @@ export function ReportsProvider({ children }) {
 
   // Create a new report via FormData
   const createReport = async (formData) => {
-    const res = await fetch(`${API_BASE_URL}/items/create.php`, {
+    const res = await fetchWithCsrf(`${API_BASE_URL}/items/create.php`, {
       method: "POST",
       credentials: "include",
       body: formData,
@@ -87,6 +87,17 @@ export function ReportsProvider({ children }) {
 
     // Refresh user's reports and public listings
     await Promise.all([fetchMyReports(), fetchPublicItems()]);
+    window.dispatchEvent(new Event("foundit-refresh-notifications"));
+
+    try {
+      const channel = new BroadcastChannel("foundit_sync_channel");
+      channel.postMessage({ type: "SYNC_REPORT_CREATED", item: data.item });
+      channel.close();
+    } catch {
+      // ignore
+    }
+    window.dispatchEvent(new CustomEvent("foundit-refresh-admin"));
+
     return data.item;
   };
 

@@ -5,12 +5,18 @@ $autoloadPath = __DIR__ . '/../vendor/autoload.php';
 if (file_exists($autoloadPath)) {
     require_once $autoloadPath;
 } else {
-    // Manual fallback for PHPMailer
-    $phpmailerDir = __DIR__ . '/../vendor/PHPMailer/src/';
-    if (file_exists($phpmailerDir . 'Exception.php')) {
-        require_once $phpmailerDir . 'Exception.php';
-        require_once $phpmailerDir . 'PHPMailer.php';
-        require_once $phpmailerDir . 'SMTP.php';
+    // Manual fallback for PHPMailer (check both PHPMailer-6.9.1 and vendor paths)
+    $possibleDirs = [
+        __DIR__ . '/../PHPMailer-6.9.1/src/',
+        __DIR__ . '/../vendor/PHPMailer/src/',
+    ];
+    foreach ($possibleDirs as $phpmailerDir) {
+        if (file_exists($phpmailerDir . 'Exception.php')) {
+            require_once $phpmailerDir . 'Exception.php';
+            require_once $phpmailerDir . 'PHPMailer.php';
+            require_once $phpmailerDir . 'SMTP.php';
+            break;
+        }
     }
 }
 
@@ -27,27 +33,33 @@ class EmailService {
         $mail = new PHPMailer(true);
         
         // Load configuration from .env or config file
-        // For this project, we can read from getenv() or define default fallbacks.
-        // Assuming a function or global array handles env vars, or just direct getenv.
-        
-        $envFile = __DIR__ . '/../../.env';
+        $envFiles = [
+            __DIR__ . '/../../.env',
+            __DIR__ . '/../.env'
+        ];
         $env = [];
-        if (file_exists($envFile)) {
-            $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-            foreach ($lines as $line) {
-                if (strpos(trim($line), '#') === 0) continue;
-                list($name, $value) = explode('=', $line, 2);
-                $env[trim($name)] = trim($value);
+        foreach ($envFiles as $envFile) {
+            if (file_exists($envFile)) {
+                $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+                foreach ($lines as $line) {
+                    $trimmed = trim($line);
+                    if ($trimmed === '' || strpos($trimmed, '#') === 0) continue;
+                    if (strpos($trimmed, '=') !== false) {
+                        list($name, $value) = explode('=', $trimmed, 2);
+                        $env[trim($name)] = trim($value);
+                    }
+                }
+                break;
             }
         }
         
-        $smtpHost = $env['SMTP_HOST'] ?? getenv('SMTP_HOST') ?? '';
-        $smtpPort = $env['SMTP_PORT'] ?? getenv('SMTP_PORT') ?? 587;
-        $smtpUsername = $env['SMTP_USERNAME'] ?? getenv('SMTP_USERNAME') ?? '';
-        $smtpPassword = $env['SMTP_PASSWORD'] ?? getenv('SMTP_PASSWORD') ?? '';
-        $smtpEncryption = $env['SMTP_ENCRYPTION'] ?? getenv('SMTP_ENCRYPTION') ?? 'tls';
-        $mailFromAddress = $env['MAIL_FROM_ADDRESS'] ?? getenv('MAIL_FROM_ADDRESS') ?? 'noreply@foundit.local';
-        $mailFromName = $env['MAIL_FROM_NAME'] ?? getenv('MAIL_FROM_NAME') ?? 'FoundIt';
+        $smtpHost = !empty($env['SMTP_HOST']) ? $env['SMTP_HOST'] : (getenv('SMTP_HOST') ?: '');
+        $smtpPort = !empty($env['SMTP_PORT']) ? (int)$env['SMTP_PORT'] : (getenv('SMTP_PORT') ? (int)getenv('SMTP_PORT') : 587);
+        $smtpUsername = !empty($env['SMTP_USERNAME']) ? $env['SMTP_USERNAME'] : (getenv('SMTP_USERNAME') ?: '');
+        $smtpPassword = !empty($env['SMTP_PASSWORD']) ? $env['SMTP_PASSWORD'] : (getenv('SMTP_PASSWORD') ?: '');
+        $smtpEncryption = !empty($env['SMTP_ENCRYPTION']) ? strtolower($env['SMTP_ENCRYPTION']) : (getenv('SMTP_ENCRYPTION') ? strtolower(getenv('SMTP_ENCRYPTION')) : 'tls');
+        $mailFromAddress = !empty($env['MAIL_FROM_ADDRESS']) ? $env['MAIL_FROM_ADDRESS'] : (getenv('MAIL_FROM_ADDRESS') ?: 'noreply@foundit.local');
+        $mailFromName = !empty($env['MAIL_FROM_NAME']) ? $env['MAIL_FROM_NAME'] : (getenv('MAIL_FROM_NAME') ?: 'FoundIt');
         
         if (empty($smtpHost)) {
             throw new \Exception("SMTP configuration is incomplete.");
@@ -62,10 +74,46 @@ class EmailService {
             $mail->SMTPSecure = $smtpEncryption;
         }
         $mail->Port       = $smtpPort;
+        $mail->Timeout    = 15;
+        $mail->SMTPOptions = [
+            'ssl' => [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true
+            ]
+        ];
+        $mail->CharSet    = 'UTF-8';
         
         $mail->setFrom($mailFromAddress, $mailFromName);
         
         return $mail;
+    }
+
+    /**
+     * Check if SMTP host is configured
+     */
+    public static function isConfigured() {
+        $envFiles = [
+            __DIR__ . '/../../.env',
+            __DIR__ . '/../.env'
+        ];
+        $env = [];
+        foreach ($envFiles as $envFile) {
+            if (file_exists($envFile)) {
+                $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+                foreach ($lines as $line) {
+                    $trimmed = trim($line);
+                    if ($trimmed === '' || strpos($trimmed, '#') === 0) continue;
+                    if (strpos($trimmed, '=') !== false) {
+                        list($name, $value) = explode('=', $trimmed, 2);
+                        $env[trim($name)] = trim($value);
+                    }
+                }
+                break;
+            }
+        }
+        $host = !empty($env['SMTP_HOST']) ? $env['SMTP_HOST'] : (getenv('SMTP_HOST') ?: '');
+        return !empty($host);
     }
     
     /**
@@ -81,13 +129,38 @@ class EmailService {
             $mail->Body    = $htmlBody;
             $mail->AltBody = $textBody;
             
-            $mail->send();
-            return true;
-        } catch (\Exception $e) {
-            // Log the error safely, do not expose to user
+            $res = $mail->send();
+            return $res;
+        } catch (\Throwable $e) {
+            // Log the error safely, do not expose to user or crash script
             error_log("EmailService Error: " . $e->getMessage());
             return false;
         }
+    }
+
+    /**
+     * Send password reset email with secure token link
+     */
+    public static function sendPasswordResetEmail($toEmail, $toName, $resetLink) {
+        $subject = "FoundIt — Password Reset Instructions";
+        
+        $html = "
+        <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1e293b;'>
+            <h2 style='color: #1e3674;'>FoundIt</h2>
+            <p>Hello <strong>" . htmlspecialchars($toName) . "</strong>,</p>
+            <p>We received a request to reset the password for your FoundIt account.</p>
+            <p style='margin: 24px 0;'>
+                <a href='" . htmlspecialchars($resetLink) . "' style='background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;'>Reset Your Password</a>
+            </p>
+            <p>If the button above does not work, copy and paste this link into your browser:</p>
+            <p style='word-break: break-all; color: #3b82f6;'><a href='" . htmlspecialchars($resetLink) . "'>" . htmlspecialchars($resetLink) . "</a></p>
+            <p style='color: #64748b; font-size: 0.85rem;'>This link will expire in 1 hour. If you did not make this request, you can safely ignore this email.</p>
+            <p>Best regards,<br>The FoundIt Team</p>
+        </div>";
+        
+        $text = "Hello $toName,\n\nWe received a request to reset the password for your FoundIt account.\n\nPlease visit this link to reset your password (link expires in 1 hour):\n$resetLink\n\nIf you did not make this request, you can safely ignore this email.\n\nBest regards,\nThe FoundIt Team";
+        
+        return self::sendSafeEmail($toEmail, $toName, $subject, $html, $text);
     }
 
     /**

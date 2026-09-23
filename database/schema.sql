@@ -9,8 +9,11 @@ CREATE TABLE users (
     name VARCHAR(100) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
     phone_number VARCHAR(20) NULL UNIQUE,
+    roll_number VARCHAR(50) NULL,
+    stream VARCHAR(100) NULL,
     password VARCHAR(255) NULL,
     role ENUM('student', 'admin') DEFAULT 'student',
+    status ENUM('active', 'suspended') DEFAULT 'active',
     firebase_uid VARCHAR(255) UNIQUE NULL,
     profile_image VARCHAR(255) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -41,7 +44,7 @@ CREATE TABLE items (
     location VARCHAR(150),
     item_date DATE,
     image VARCHAR(255),
-    status ENUM('active', 'under_review', 'matched', 'claimed', 'resolved') DEFAULT 'active',
+    status ENUM('active', 'under_review', 'pending', 'matched', 'claimed', 'resolved', 'rejected') DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
@@ -99,3 +102,17 @@ CREATE TABLE reports (
     FOREIGN KEY (reported_by) REFERENCES users(id)
         ON DELETE CASCADE
 );
+
+-- ========================================================
+-- RATE LIMITS TABLE (Phase 2 Security Hardening)
+-- ========================================================
+CREATE TABLE IF NOT EXISTS rate_limits (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    action_key VARCHAR(150) NOT NULL,
+    attempts INT NOT NULL DEFAULT 1,
+    last_attempt DATETIME NOT NULL,
+    locked_until DATETIME NULL,
+    UNIQUE KEY uk_action_key (action_key),
+    INDEX idx_locked (locked_until),
+    INDEX idx_last_attempt (last_attempt)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

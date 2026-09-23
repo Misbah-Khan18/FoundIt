@@ -26,7 +26,11 @@ export default function Register() {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      navigate("/dashboard", { replace: true });
+      if (user.role === "admin" || user.is_admin) {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
     }
   }, [isAuthenticated, user, navigate]);
 
@@ -105,8 +109,12 @@ export default function Register() {
     setGoogleLoading(true);
 
     try {
-      await loginWithGoogle();
-      navigate("/dashboard", { replace: true });
+      const loggedUser = await loginWithGoogle();
+      if (loggedUser?.role === "admin") {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
     } catch (err) {
       setGeneralError(err.message || "Failed to sign up with Google.");
     } finally {
@@ -133,8 +141,6 @@ export default function Register() {
       confirm_password: true,
       roll_number: true,
       stream: true,
-      vehicle_number: true,
-      vehicle_type: true
     });
     setErrors(newErrors);
 
@@ -151,9 +157,7 @@ export default function Register() {
         form.phone_number,
         form.password,
         form.roll_number,
-        form.stream,
-        form.vehicle_number,
-        form.vehicle_type
+        form.stream
       );
       navigate("/login", {
         replace: true,
@@ -198,9 +202,9 @@ export default function Register() {
           letterSpacing: "0.05em",
         }}
       >
-        <span style={{ flex: 1, height: "1px", background: "var(--border-light, #e2e8f0)" }} />
+        <span style={{ flex: 1, height: "1px", background: "rgba(168, 85, 247, 0.2)" }} />
         <span>or with credentials</span>
-        <span style={{ flex: 1, height: "1px", background: "var(--border-light, #e2e8f0)" }} />
+        <span style={{ flex: 1, height: "1px", background: "rgba(168, 85, 247, 0.2)" }} />
       </div>
 
       <form className="form" onSubmit={handleSubmit} noValidate>

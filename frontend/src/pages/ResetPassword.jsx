@@ -50,7 +50,7 @@ export default function ResetPassword() {
 
   return (
     <>
-      <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "48px", height: "48px", borderRadius: "12px", background: "rgba(30, 54, 116, 0.08)", color: "var(--navy-900)", marginBottom: "16px" }}>
+      <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "48px", height: "48px", borderRadius: "12px", background: "rgba(168, 85, 247, 0.15)", color: "#c084fc", border: "1px solid rgba(168, 85, 247, 0.3)", marginBottom: "16px", boxShadow: "0 0 15px rgba(168, 85, 247, 0.25)" }}>
         <ShieldCheck size={24} strokeWidth={2.2} />
       </div>
 
@@ -125,7 +125,7 @@ export default function ResetPassword() {
               justifyContent: "center",
               gap: "6px",
               fontSize: "0.88rem",
-              color: "var(--slate-500)",
+              color: "#c084fc",
               textDecoration: "none",
               marginTop: "8px",
             }}

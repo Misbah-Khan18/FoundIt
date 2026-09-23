@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Bell,
@@ -9,52 +9,50 @@ import {
   CheckCheck,
   Trash2,
   ExternalLink,
-  Info,
-  Clock
+  Clock,
 } from "lucide-react";
 import EmptyState from "../components/EmptyState.jsx";
-import { API_BASE_URL } from "../context/AuthContext.jsx";
+import { API_BASE_URL, fetchWithCsrf } from "../context/AuthContext.jsx";
 
 export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all"); // "all" | "unread"
 
-  const fetchNotifs = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await fetch(`${API_BASE_URL}/notifications/list.php`, {
-        credentials: "include",
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success) {
-          setNotifications(data.notifications || []);
-        }
-      }
-    } catch (err) {
-      console.warn("Error fetching notifications:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    fetchNotifs();
-  }, [fetchNotifs]);
+    let ignore = false;
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/notifications/list.php`, {
+          credentials: "include",
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && !ignore) {
+            setNotifications(data.notifications || []);
+          }
+        }
+      } catch (err) {
+        console.warn("Error fetching notifications:", err);
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    })();
+    return () => { ignore = true; };
+  }, []);
 
   const handleMarkAsRead = async (id) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/notifications/mark-read.php`, {
+      const res = await fetchWithCsrf(`${API_BASE_URL}/notifications/mark-read.php`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({ id }),
       });
       if (res.ok) {
         setNotifications((prev) =>
           prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
         );
+        window.dispatchEvent(new Event("foundit-refresh-notifications"));
       }
     } catch (err) {
       console.error("Mark read error:", err);
@@ -63,14 +61,14 @@ export default function Notifications() {
 
   const handleMarkAllRead = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/notifications/mark-read.php`, {
+      const res = await fetchWithCsrf(`${API_BASE_URL}/notifications/mark-read.php`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({ all: true }),
       });
       if (res.ok) {
         setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+        window.dispatchEvent(new Event("foundit-refresh-notifications"));
       }
     } catch (err) {
       console.error("Mark all read error:", err);
@@ -79,14 +77,14 @@ export default function Notifications() {
 
   const handleDelete = async (id) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/notifications/delete.php`, {
+      const res = await fetchWithCsrf(`${API_BASE_URL}/notifications/delete.php`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({ id }),
       });
       if (res.ok) {
         setNotifications((prev) => prev.filter((n) => n.id !== id));
+        window.dispatchEvent(new Event("foundit-refresh-notifications"));
       }
     } catch (err) {
       console.error("Delete notification error:", err);
@@ -96,14 +94,14 @@ export default function Notifications() {
   const handleClearAll = async () => {
     if (!window.confirm("Are you sure you want to clear all notifications?")) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/notifications/delete.php`, {
+      const res = await fetchWithCsrf(`${API_BASE_URL}/notifications/delete.php`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({ all: true }),
       });
       if (res.ok) {
         setNotifications([]);
+        window.dispatchEvent(new Event("foundit-refresh-notifications"));
       }
     } catch (err) {
       console.error("Clear all notifications error:", err);
@@ -114,33 +112,33 @@ export default function Notifications() {
     switch (type) {
       case "match_confirmed":
       case "match":
-        return <Sparkles size={18} className="text-purple-600" />;
+        return <Sparkles size={17} color="#7c3aed" />;
       case "claim_approved":
-        return <CheckCircle2 size={18} className="text-emerald-600" />;
+        return <CheckCircle2 size={17} color="#059669" />;
       case "claim_rejected":
       case "competing_claim_rejected":
-        return <XCircle size={18} className="text-rose-600" />;
+        return <XCircle size={17} color="#e11d48" />;
       case "claim_submitted":
-        return <HandCoins size={18} className="text-blue-600" />;
+        return <HandCoins size={17} color="#2563eb" />;
       default:
-        return <Bell size={18} className="text-slate-600" />;
+        return <Bell size={17} color="#7c3aed" />;
     }
   };
 
-  const getNotifBadgeClass = (type) => {
+  const getNotifIconBg = (type) => {
     switch (type) {
       case "match_confirmed":
       case "match":
-        return "bg-purple-50 text-purple-700 border-purple-200";
+        return { background: "#f5f3ff", border: "1px solid rgba(124, 58, 237, 0.2)" };
       case "claim_approved":
-        return "bg-emerald-50 text-emerald-700 border-emerald-200";
+        return { background: "#ecfdf5", border: "1px solid rgba(5, 150, 105, 0.2)" };
       case "claim_rejected":
       case "competing_claim_rejected":
-        return "bg-rose-50 text-rose-700 border-rose-200";
+        return { background: "#fff1f2", border: "1px solid #fecdd3" };
       case "claim_submitted":
-        return "bg-blue-50 text-blue-700 border-blue-200";
+        return { background: "#eff6ff", border: "1px solid #bfdbfe" };
       default:
-        return "bg-slate-50 text-slate-700 border-slate-200";
+        return { background: "#f5f3ff", border: "1px solid rgba(124, 58, 237, 0.2)" };
     }
   };
 
@@ -167,30 +165,60 @@ export default function Notifications() {
   );
 
   return (
-    <div className="dash-page max-w-4xl mx-auto">
+    <div style={{ maxWidth: "860px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "20px" }}>
       {/* Header & Quick Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "16px" }}>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Notifications & Alerts</h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <h1 style={{ fontSize: "1.5rem", fontWeight: 800, color: "#0f172a", margin: "0 0 4px", letterSpacing: "-0.02em" }}>
+            Notifications &amp; Alerts
+          </h1>
+          <p style={{ fontSize: "0.86rem", color: "#64748b", margin: 0 }}>
             Real-time updates on report matches, status changes, and campus claim approvals.
           </p>
         </div>
 
         {notifications.length > 0 && (
-          <div className="flex items-center gap-2">
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             {unreadCount > 0 && (
               <button
+                type="button"
                 onClick={handleMarkAllRead}
-                className="btn btn--outline btn--sm text-xs flex items-center gap-1.5 py-1.5 px-3 rounded-lg border-slate-200 hover:bg-slate-50 text-slate-700 transition-all"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "7px 14px",
+                  fontSize: "0.8rem",
+                  fontWeight: 600,
+                  borderRadius: "8px",
+                  background: "#f5f3ff",
+                  color: "#7c3aed",
+                  border: "1px solid rgba(124, 58, 237, 0.25)",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                }}
               >
                 <CheckCheck size={14} />
                 Mark all read
               </button>
             )}
             <button
+              type="button"
               onClick={handleClearAll}
-              className="btn btn--outline btn--sm text-xs flex items-center gap-1.5 py-1.5 px-3 rounded-lg border-rose-200 text-rose-600 hover:bg-rose-50 transition-all"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "7px 14px",
+                fontSize: "0.8rem",
+                fontWeight: 600,
+                borderRadius: "8px",
+                background: "#fff1f2",
+                color: "#e11d48",
+                border: "1px solid #fecdd3",
+                cursor: "pointer",
+                transition: "all 0.15s ease",
+              }}
             >
               <Trash2 size={14} />
               Clear all
@@ -200,34 +228,71 @@ export default function Notifications() {
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 mb-6 pb-2">
+      <div style={{ display: "flex", gap: "8px", borderBottom: "1px solid rgba(139, 92, 246, 0.12)", paddingBottom: "10px" }}>
         <button
+          type="button"
           onClick={() => setFilter("all")}
-          className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2 ${
-            filter === "all"
-              ? "bg-navy-900 text-white shadow-sm"
-              : "text-slate-600 hover:bg-slate-100"
-          }`}
+          style={{
+            padding: "7px 16px",
+            fontSize: "0.84rem",
+            fontWeight: 700,
+            borderRadius: "10px",
+            border: "none",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "8px",
+            background: filter === "all" ? "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)" : "transparent",
+            color: filter === "all" ? "#ffffff" : "#64748b",
+            boxShadow: filter === "all" ? "0 4px 14px rgba(124, 58, 237, 0.3)" : "none",
+            cursor: "pointer",
+            transition: "all 0.15s ease",
+          }}
         >
           All Notifications
-          <span className={`text-xs px-2 py-0.5 rounded-full ${
-            filter === "all" ? "bg-navy-800 text-slate-200" : "bg-slate-200 text-slate-700"
-          }`}>
+          <span
+            style={{
+              fontSize: "0.72rem",
+              padding: "2px 7px",
+              borderRadius: "999px",
+              background: filter === "all" ? "rgba(255, 255, 255, 0.25)" : "#f1f5f9",
+              color: filter === "all" ? "#ffffff" : "#64748b",
+            }}
+          >
             {notifications.length}
           </span>
         </button>
 
         <button
+          type="button"
           onClick={() => setFilter("unread")}
-          className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2 ${
-            filter === "unread"
-              ? "bg-navy-900 text-white shadow-sm"
-              : "text-slate-600 hover:bg-slate-100"
-          }`}
+          style={{
+            padding: "7px 16px",
+            fontSize: "0.84rem",
+            fontWeight: 700,
+            borderRadius: "10px",
+            border: "none",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "8px",
+            background: filter === "unread" ? "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)" : "transparent",
+            color: filter === "unread" ? "#ffffff" : "#64748b",
+            boxShadow: filter === "unread" ? "0 4px 14px rgba(124, 58, 237, 0.3)" : "none",
+            cursor: "pointer",
+            transition: "all 0.15s ease",
+          }}
         >
           Unread
           {unreadCount > 0 && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-rose-500 text-white font-bold">
+            <span
+              style={{
+                fontSize: "0.72rem",
+                padding: "2px 7px",
+                borderRadius: "999px",
+                background: "#ef4444",
+                color: "#ffffff",
+                fontWeight: 700,
+              }}
+            >
               {unreadCount}
             </span>
           )}
@@ -236,96 +301,143 @@ export default function Notifications() {
 
       {/* List / Loading / Empty State */}
       {loading ? (
-        <div className="p-12 text-center text-slate-400">
-          <div className="animate-spin w-8 h-8 border-2 border-navy-600 border-t-transparent rounded-full mx-auto mb-3"></div>
+        <div style={{ padding: "48px", textAlign: "center", color: "#64748b" }}>
           Loading notifications...
         </div>
       ) : filteredNotifications.length > 0 ? (
-        <div className="notif-list space-y-3">
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           {filteredNotifications.map((n) => (
             <div
               key={n.id}
               onClick={() => !n.is_read && handleMarkAsRead(n.id)}
-              className={`group relative flex items-start gap-4 p-4 rounded-xl border transition-all duration-200 ${
-                !n.is_read
-                  ? "bg-amber-50/40 border-amber-200/80 shadow-sm hover:border-amber-300"
-                  : "bg-white border-slate-200/80 hover:border-slate-300"
-              }`}
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: "14px",
+                padding: "16px 18px",
+                borderRadius: "14px",
+                background: !n.is_read ? "#ffffff" : "rgba(255, 255, 255, 0.82)",
+                border: !n.is_read ? "1px solid rgba(139, 92, 246, 0.3)" : "1px solid rgba(139, 92, 246, 0.12)",
+                borderLeft: !n.is_read ? "4px solid #7c3aed" : "1px solid rgba(139, 92, 246, 0.12)",
+                boxShadow: !n.is_read
+                  ? "0 4px 18px -2px rgba(124, 58, 237, 0.08), 0 1px 3px rgba(15, 23, 42, 0.03)"
+                  : "0 1px 3px rgba(15, 23, 42, 0.03)",
+                backdropFilter: "blur(20px)",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                position: "relative",
+              }}
             >
               {/* Left Type Icon */}
               <div
-                className={`p-2.5 rounded-xl border flex items-center justify-center shrink-0 ${getNotifBadgeClass(
-                  n.type
-                )}`}
+                style={{
+                  width: "36px",
+                  height: "36px",
+                  borderRadius: "10px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                  ...getNotifIconBg(n.type),
+                }}
               >
                 {getNotifIcon(n.type)}
               </div>
 
               {/* Center Details */}
-              <div className="flex-1 min-w-0 pr-8">
-                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <h3 className={`text-sm font-semibold tracking-tight ${
-                    !n.is_read ? "text-slate-900" : "text-slate-700"
-                  }`}>
+              <div style={{ flex: 1, minWidth: 0, paddingRight: "40px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+                  <h3
+                    style={{
+                      fontSize: "0.92rem",
+                      fontWeight: 700,
+                      color: "#0f172a",
+                      margin: 0,
+                    }}
+                  >
                     {n.title}
                   </h3>
                   {!n.is_read && (
-                    <span className="inline-block w-2 h-2 rounded-full bg-amber-500 shrink-0" title="Unread"></span>
+                    <span
+                      style={{
+                        width: "7px",
+                        height: "7px",
+                        borderRadius: "50%",
+                        background: "#7c3aed",
+                        display: "inline-block",
+                        flexShrink: 0,
+                      }}
+                      title="Unread"
+                    />
                   )}
                 </div>
 
-                <p className="text-sm text-slate-600 leading-relaxed mb-2">
+                <p style={{ fontSize: "0.85rem", color: "#334155", margin: "0 0 8px", lineHeight: 1.45 }}>
                   {n.message || n.body}
                 </p>
 
-                <div className="flex items-center gap-4 text-xs text-slate-400 font-mono">
-                  <span className="flex items-center gap-1">
-                    <Clock size={12} />
-                    {formatTime(n.created_at)}
+                <div style={{ display: "flex", alignItems: "center", gap: "14px", fontSize: "0.75rem", color: "#64748b" }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                    <Clock size={12} /> {formatTime(n.created_at)}
                   </span>
 
-                  {/* Context Links */}
                   {n.related_claim_id ? (
                     <Link
                       to="/dashboard/claims"
-                      className="text-blue-600 hover:text-blue-800 font-sans font-medium flex items-center gap-1 hover:underline"
+                      style={{ color: "#7c3aed", fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "3px" }}
                     >
                       View Claim <ExternalLink size={11} />
                     </Link>
                   ) : n.related_item_id ? (
                     <Link
-                      to="/dashboard/reports"
-                      className="text-blue-600 hover:text-blue-800 font-sans font-medium flex items-center gap-1 hover:underline"
+                      to={`/items/${n.related_item_id}`}
+                      style={{ color: "#7c3aed", fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "3px" }}
                     >
-                      View Item Details <ExternalLink size={11} />
+                      View Public Card <ExternalLink size={11} />
                     </Link>
                   ) : null}
                 </div>
               </div>
 
-              {/* Right Action Icons (Hover visible or subtle) */}
-              <div className="absolute top-3 right-3 flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+              {/* Right Action Icons */}
+              <div style={{ position: "absolute", top: "12px", right: "12px", display: "flex", alignItems: "center", gap: "4px" }}>
                 {!n.is_read && (
                   <button
+                    type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleMarkAsRead(n.id);
                     }}
                     title="Mark as read"
-                    className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-md transition-colors"
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "#64748b",
+                      cursor: "pointer",
+                      padding: "4px",
+                      borderRadius: "6px",
+                    }}
                   >
-                    <CheckCheck size={15} />
+                    <CheckCheck size={16} />
                   </button>
                 )}
                 <button
+                  type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDelete(n.id);
                   }}
                   title="Delete notification"
-                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    color: "#94a3b8",
+                    cursor: "pointer",
+                    padding: "4px",
+                    borderRadius: "6px",
+                  }}
                 >
-                  <Trash2 size={15} />
+                  <Trash2 size={16} />
                 </button>
               </div>
             </div>
@@ -333,7 +445,7 @@ export default function Notifications() {
         </div>
       ) : (
         <EmptyState
-          icon={<Bell size={28} className="text-slate-400" />}
+          icon={<Bell size={28} color="#7c3aed" />}
           title={filter === "unread" ? "No unread alerts" : "No alerts right now"}
           description={
             filter === "unread"

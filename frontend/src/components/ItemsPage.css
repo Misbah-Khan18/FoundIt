@@ -1,8 +1,15 @@
 .items-page__filters {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 28px;
+  gap: 14px;
+  margin-bottom: 32px;
+  background: rgba(18, 12, 38, 0.6);
+  padding: 16px 20px;
+  border-radius: var(--radius-md, 14px);
+  border: 1px solid rgba(168, 85, 247, 0.18);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .items-page__search {
@@ -15,7 +22,7 @@
 .items-page__search svg {
   position: absolute;
   left: 14px;
-  color: var(--slate-500);
+  color: #c084fc;
   pointer-events: none;
 }
 
@@ -30,7 +37,7 @@
 .items-page__grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
+  gap: 20px;
 }
 
 @media (max-width: 820px) {
@@ -47,3 +54,4 @@
     flex: 1 1 auto;
   }
 }
+

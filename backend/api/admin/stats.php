@@ -1,19 +1,12 @@
 <?php
 
 require_once('../../config/cors.php');
-session_start();
 header("Content-Type: application/json");
 require_once('../../config/database.php');
+require_once('../../middleware/auth.php');
 
-// Strict server-side role check
-if (!isset($_SESSION["user_id"]) || ($_SESSION["role"] ?? "") !== "admin") {
-    http_response_code(403);
-    echo json_encode([
-        "success" => false,
-        "message" => "Forbidden: Administrator privileges required."
-    ]);
-    exit;
-}
+// Strict server-side verification: authenticated + non-suspended + admin role in MySQL
+$adminId = requireAdmin($conn);
 
 // Platform statistics query
 $userCount = 0;

@@ -50,7 +50,7 @@ export default function ToastContainer() {
             ) : (
               <CheckCircle2 size={18} color={color} style={{ flexShrink: 0 }} />
             )}
-            <span style={{ fontSize: "0.86rem", fontWeight: 600, color: "var(--ink)", flex: 1, lineHeight: 1.4 }}>
+            <span style={{ fontSize: "0.86rem", fontWeight: 600, color: "#0f172a", flex: 1, lineHeight: 1.4 }}>
               {toast.message}
             </span>
             <button
@@ -60,7 +60,7 @@ export default function ToastContainer() {
                 border: "none",
                 cursor: "pointer",
                 padding: "2px",
-                color: "var(--slate-400)",
+                color: "#64748b",
                 display: "flex",
                 alignItems: "center",
               }}

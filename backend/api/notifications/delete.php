@@ -1,21 +1,16 @@
 <?php
 
 require_once('../../config/cors.php');
-session_start();
 header("Content-Type: application/json");
 require_once('../../config/database.php');
+require_once('../../middleware/auth.php');
+require_once('../../middleware/csrf.php');
 
-if (!isset($_SESSION["user_id"])) {
-    http_response_code(401);
-    echo json_encode([
-        "success" => false,
-        "message" => "Authentication required."
-    ]);
-    exit;
-}
+$authenticatedUser = requireAuth($conn);
+$user_id = (int)$authenticatedUser["id"];
 
-$user_id = (int)$_SESSION["user_id"];
 $data = json_decode(file_get_contents("php://input"), true);
+validateCsrfToken($data);
 
 $id = isset($data["id"]) ? (int)$data["id"] : null;
 $deleteAll = !empty($data["all"]);

@@ -3,6 +3,7 @@
 require_once('../../config/cors.php');
 header("Content-Type: application/json");
 require_once('../../config/database.php');
+require_once('../../services/RateLimiter.php');
 
 // Only allow POST requests
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
@@ -11,6 +12,21 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
         "success" => false,
         "message" => "Only POST requests are allowed."
     ]);
+    exit;
+}
+
+// 1. Rate Limiting Protection (Max 5 attempts per 15 minutes per IP)
+$clientIp = RateLimiter::getClientIp();
+$ipKey = "reset:ip:" . $clientIp;
+
+$ipCheck = RateLimiter::check($conn, $ipKey, 5, 900, 900);
+if (!$ipCheck['allowed']) {
+    http_response_code(429);
+    echo json_encode([
+        "success" => false,
+        "message" => "Too many password reset attempts. Please wait " . ceil($ipCheck['retry_after'] / 60) . " minutes before trying again."
+    ]);
+    $conn->close();
     exit;
 }
 
@@ -50,6 +66,7 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows === 0) {
+    RateLimiter::recordFailure($conn, $ipKey, 5, 900, 900);
     http_response_code(400);
     echo json_encode([
         "success" => false,
@@ -70,17 +87,21 @@ $updateStmt = $conn->prepare("UPDATE users SET password = ? WHERE email = ?");
 $updateStmt->bind_param("ss", $newHash, $email);
 
 if ($updateStmt->execute()) {
-    // Delete used token
+    // Delete used token immediately so it cannot be replayed
     $delStmt = $conn->prepare("DELETE FROM password_resets WHERE email = ?");
     $delStmt->bind_param("s", $email);
     $delStmt->execute();
     $delStmt->close();
+
+    // Reset rate limiter on successful reset
+    RateLimiter::reset($conn, $ipKey);
 
     echo json_encode([
         "success" => true,
         "message" => "Your password has been reset successfully. Please log in with your new credentials."
     ]);
 } else {
+    error_log("Failed to update password: " . $conn->error);
     http_response_code(500);
     echo json_encode([
         "success" => false,
@@ -90,5 +111,3 @@ if ($updateStmt->execute()) {
 
 $updateStmt->close();
 $conn->close();
-
-?>

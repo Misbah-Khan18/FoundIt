@@ -12,35 +12,36 @@ export default function MyClaims() {
 
   const backendHost = API_BASE_URL.replace(/\/api$/, "");
 
-  const fetchClaims = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch(`${API_BASE_URL}/claims/my-claims.php`, {
-        credentials: "include",
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success) {
-          setClaims(data.claims || []);
-        } else {
-          setError(data.message || "Failed to load claims.");
-        }
-      } else if (res.status === 401) {
-        setError("Please log in to view your claims.");
-      } else {
-        setError("Unable to load claims.");
-      }
-    } catch (err) {
-      console.warn("Error fetching claims:", err);
-      setError("Network error loading claims.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchClaims();
+    let ignore = false;
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/claims/my-claims.php`, {
+          credentials: "include",
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && !ignore) {
+            setClaims(data.claims || []);
+          } else if (!ignore) {
+            setError(data.message || "Failed to load claims.");
+          }
+        } else if (res.status === 401 && !ignore) {
+          setError("Please log in to view your claims.");
+        } else if (!ignore) {
+          setError("Unable to load claims.");
+        }
+      } catch (err) {
+        console.warn("Error fetching claims:", err);
+        if (!ignore) setError("Network error loading claims.");
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    })();
+
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   const getImageSrc = (imgPath) => {
@@ -66,7 +67,7 @@ export default function MyClaims() {
   return (
     <div className="dash-page">
       <div className="dash-page__header">
-        <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: "var(--gold-600)", fontWeight: 700, fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: "#7c3aed", fontWeight: 700, fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>
           <HandCoins size={15} /> Student Claim History
         </div>
         <h1>My Claims</h1>
@@ -88,21 +89,21 @@ export default function MyClaims() {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "16px", flexWrap: "wrap" }}>
                   <div style={{ display: "flex", gap: "16px", flex: 1, minWidth: "280px" }}>
                     {imgSrc && (
-                      <div style={{ width: "90px", height: "90px", borderRadius: "8px", overflow: "hidden", flexShrink: 0, background: "#f1f5f9" }}>
+                      <div style={{ width: "90px", height: "90px", borderRadius: "8px", overflow: "hidden", flexShrink: 0, background: "#f1f5f9", border: "1px solid rgba(139, 92, 246, 0.15)" }}>
                         <img src={imgSrc} alt={claim.item_title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                       </div>
                     )}
                     <div style={{ flex: 1 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-                        <span className="eyebrow" style={{ color: "var(--navy-900)" }}>Claim #{claim.id}</span>
+                        <span className="eyebrow" style={{ color: "#7c3aed" }}>Claim #{claim.id}</span>
                         <span style={{ fontSize: "0.75rem", color: "var(--slate-500)" }}>• Ref Item #{claim.item_id}</span>
                       </div>
-                      <h3 style={{ fontFamily: "var(--font-display)", fontSize: "1.1rem", fontWeight: 700, margin: "0 0 6px", color: "var(--ink)" }}>
+                      <h3 style={{ fontFamily: "var(--font-display)", fontSize: "1.1rem", fontWeight: 700, margin: "0 0 6px", color: "#0f172a" }}>
                         {claim.item_title || "Claimed Item"}
                       </h3>
                       {claim.message && (
-                        <div style={{ fontSize: "0.86rem", color: "var(--slate-700)", margin: "0 0 10px", lineHeight: 1.45, background: "var(--ivory)", padding: "8px 12px", borderRadius: "6px", border: "1px solid var(--border-light)" }}>
-                          <strong>Your Ownership Statement:</strong> "{claim.message}"
+                        <div style={{ fontSize: "0.86rem", color: "#1e293b", margin: "0 0 10px", lineHeight: 1.45, background: "#faf7ff", padding: "10px 14px", borderRadius: "8px", border: "1px solid rgba(139, 92, 246, 0.18)" }}>
+                          <strong style={{ color: "#7c3aed" }}>Your Ownership Statement:</strong> "{claim.message}"
                         </div>
                       )}
                       <div style={{ display: "flex", alignItems: "center", gap: "16px", fontSize: "0.82rem", color: "var(--slate-500)", flexWrap: "wrap" }}>

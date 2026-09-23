@@ -1,17 +1,23 @@
-import { useState, useMemo } from "react";
-import { ShieldAlert, Search, CheckCircle2, Eye, Tag, MapPin, Calendar, User, XCircle } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { ShieldAlert, Search, CheckCircle2, Eye, Tag, MapPin, Calendar, User, ExternalLink } from "lucide-react";
 import Badge from "../../components/Badge.jsx";
 import EmptyState from "../../components/EmptyState.jsx";
 import ItemDetailsModal from "../../components/admin/ItemDetailsModal.jsx";
 import MarkFoundModal from "../../components/admin/MarkFoundModal.jsx";
+import AdminSyncBadge from "../../components/admin/AdminSyncBadge.jsx";
 import { useAdmin } from "../../context/AdminContext.jsx";
 
 export default function AdminPendingApprovals() {
-  const { items, approveReport, rejectReport, markAsFound, markAsReturned } = useAdmin();
+  const { items, approveReport, rejectReport, markAsFound, markAsReturned, deleteReport, refreshAdminData } = useAdmin();
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [selectedItem, setSelectedItem] = useState(null);
   const [markFoundTarget, setMarkFoundTarget] = useState(null);
+
+  useEffect(() => {
+    refreshAdminData();
+  }, [refreshAdminData]);
 
   const pendingItems = useMemo(() => {
     return items
@@ -27,12 +33,15 @@ export default function AdminPendingApprovals() {
 
   return (
     <div className="dash-page">
-      <div className="dash-page__header">
-        <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: "var(--gold-600)", fontWeight: 700, fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>
-          <ShieldAlert size={15} /> Moderation Queue
+      <div className="dash-page__header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "16px" }}>
+        <div>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: "#7c3aed", fontWeight: 700, fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>
+            <ShieldAlert size={15} /> Moderation Queue
+          </div>
+          <h1>Pending Approvals</h1>
+          <p>Review newly filed lost &amp; found submissions from students before public directory publication.</p>
         </div>
-        <h1>Pending Approvals</h1>
-        <p>Review newly filed lost &amp; found submissions from students before public directory publication.</p>
+        <AdminSyncBadge />
       </div>
 
       {/* Filter and search bar */}
@@ -44,8 +53,8 @@ export default function AdminPendingApprovals() {
           display: "flex",
           flexWrap: "wrap",
           gap: "14px",
-          alignItems: "center",
           justifyContent: "space-between",
+          alignItems: "center",
           margin: "0 0 24px",
         }}
       >
@@ -66,9 +75,9 @@ export default function AdminPendingApprovals() {
               key={t}
               onClick={() => setTypeFilter(t)}
               style={{
-                border: "1px solid var(--border-light)",
-                background: typeFilter === t ? "var(--navy-900)" : "#ffffff",
-                color: typeFilter === t ? "#ffffff" : "var(--slate-600)",
+                border: typeFilter === t ? "1px solid rgba(124, 58, 237, 0.4)" : "1px solid #e2e8f0",
+                background: typeFilter === t ? "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)" : "#f1f5f9",
+                color: typeFilter === t ? "#ffffff" : "#64748b",
                 padding: "6px 14px",
                 borderRadius: "8px",
                 fontWeight: 600,
@@ -76,6 +85,7 @@ export default function AdminPendingApprovals() {
                 textTransform: "capitalize",
                 cursor: "pointer",
                 transition: "all 0.15s ease",
+                boxShadow: typeFilter === t ? "0 2px 10px rgba(124, 58, 237, 0.25)" : "none",
               }}
             >
               {t === "all" ? "All Queue" : `${t} Reports`}
@@ -103,12 +113,12 @@ export default function AdminPendingApprovals() {
                 gridTemplateColumns: "auto 1fr auto",
                 gap: "20px",
                 alignItems: "center",
-                borderLeft: item.type === "lost" ? "4px solid var(--red-500)" : "4px solid var(--blue-500)",
+                borderLeft: item.type === "lost" ? "4px solid #ef4444" : "4px solid #3b82f6",
                 margin: 0,
               }}
             >
               {item.image ? (
-                <div style={{ width: "84px", height: "84px", borderRadius: "10px", overflow: "hidden", border: "1px solid var(--border-light)", flexShrink: 0 }}>
+                <div style={{ width: "84px", height: "84px", borderRadius: "10px", overflow: "hidden", border: "1px solid rgba(139, 92, 246, 0.15)", flexShrink: 0, background: "#f1f5f9" }}>
                   <img src={item.image} alt={item.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 </div>
               ) : (
@@ -117,11 +127,12 @@ export default function AdminPendingApprovals() {
                     width: "84px",
                     height: "84px",
                     borderRadius: "10px",
-                    background: "var(--ivory-dim)",
+                    background: "#f8f9fe",
+                    border: "1px solid rgba(139, 92, 246, 0.15)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    color: "var(--slate-400)",
+                    color: "#94a3b8",
                     fontSize: "0.75rem",
                     fontWeight: 600,
                     flexShrink: 0,
@@ -135,25 +146,25 @@ export default function AdminPendingApprovals() {
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
                   <Badge status={item.type} />
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--slate-500)", fontWeight: 700 }}>#{item.id}</span>
-                  <span style={{ fontSize: "0.75rem", background: "rgba(201, 165, 72, 0.18)", color: "var(--gold-600)", padding: "2px 8px", borderRadius: "4px", fontWeight: 800 }}>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "#7c3aed", fontWeight: 700 }}>#{item.id}</span>
+                  <span style={{ fontSize: "0.75rem", background: "#fef3c7", color: "#d97706", padding: "2px 8px", borderRadius: "4px", fontWeight: 800 }}>
                     Awaiting Review
                   </span>
                 </div>
-                <h3 style={{ margin: "0 0 6px", fontSize: "1.1rem", fontWeight: 700, color: "var(--ink)" }}>{item.title}</h3>
-                <p style={{ margin: "0 0 10px", fontSize: "0.86rem", color: "var(--slate-600)", lineHeight: 1.4 }}>
+                <h3 style={{ margin: "0 0 6px", fontSize: "1.1rem", fontWeight: 700, color: "#0f172a" }}>{item.title}</h3>
+                <p style={{ margin: "0 0 10px", fontSize: "0.86rem", color: "#475569", lineHeight: 1.4 }}>
                   {item.description || "No description logged."}
                 </p>
 
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "14px", fontSize: "0.8rem", color: "var(--slate-500)" }}>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "14px", fontSize: "0.8rem", color: "#64748b" }}>
                   <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                    <Tag size={13} color="var(--blue-500)" /> {item.category || "General"}
+                    <Tag size={13} color="#7c3aed" /> {item.category || "General"}
                   </span>
                   <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                    <MapPin size={13} color="var(--red-500)" /> {item.location}
+                    <MapPin size={13} color="#ef4444" /> {item.location}
                   </span>
                   <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                    <Calendar size={13} color="var(--gold-600)" /> {item.date || "Recent"}
+                    <Calendar size={13} color="#d97706" /> {item.date || "Recent"}
                   </span>
                   <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
                     <User size={13} /> {item.reporter || "Student"}
@@ -164,15 +175,15 @@ export default function AdminPendingApprovals() {
               {/* Action Buttons */}
               <div style={{ display: "flex", flexDirection: "column", gap: "8px", minWidth: "130px" }}>
                 <button
-                  className="btn btn--emerald btn--sm"
+                  className="btn btn--primary btn--sm"
                   style={{ width: "100%", justifyContent: "center", fontSize: "0.8rem" }}
                   onClick={() => approveReport(item.id)}
                 >
                   ✓ Approve
                 </button>
                 <button
-                  className="btn btn--outline btn--sm"
-                  style={{ width: "100%", justifyContent: "center", borderColor: "var(--red-500)", color: "var(--red-500)", fontSize: "0.8rem" }}
+                  className="btn btn--danger-outline btn--sm"
+                  style={{ width: "100%", justifyContent: "center", fontSize: "0.8rem" }}
                   onClick={() => rejectReport(item.id)}
                 >
                   ✕ Reject
@@ -184,6 +195,14 @@ export default function AdminPendingApprovals() {
                 >
                   <Eye size={13} /> View Details
                 </button>
+                <Link
+                  to={`/items/${item.id}`}
+                  className="btn btn--outline btn--sm"
+                  style={{ width: "100%", justifyContent: "center", fontSize: "0.78rem", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                  title="View Public Card"
+                >
+                  Public Card <ExternalLink size={12} />
+                </Link>
               </div>
             </div>
           ))}
@@ -202,6 +221,7 @@ export default function AdminPendingApprovals() {
           setMarkFoundTarget(items.find((i) => i.id === id));
         }}
         onMarkReturned={markAsReturned}
+        onDeleteReport={deleteReport}
       />
 
       <MarkFoundModal
