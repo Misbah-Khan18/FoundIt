@@ -7,6 +7,17 @@ const AuthContext = createContext(null);
 
 export const API_BASE_URL = "/foundit-backend/api";
 
+async function readAuthResponse(response) {
+  const body = await response.text();
+  try {
+    return JSON.parse(body);
+  } catch {
+    throw new Error(
+      `Authentication server returned an invalid response (HTTP ${response.status}). Check that PHP and the database server are running.`
+    );
+  }
+}
+
 let currentCsrfToken = "";
 
 export function getStoredCsrfToken() {
@@ -97,7 +108,7 @@ export function AuthProvider({ children }) {
         credentials: "include",
         body: JSON.stringify({ email: email.trim(), password }),
       });
-      const data = await response.json();
+      const data = await readAuthResponse(response);
       if (response.ok && data.success && data.user) {
         setUser(data.user);
         if (data.csrf_token) {
@@ -173,7 +184,7 @@ export function AuthProvider({ children }) {
           stream: stream ? stream.trim() : ""
         }),
       });
-      const data = await response.json();
+      const data = await readAuthResponse(response);
       
       if (!response.ok || !data.success) {
         throw new Error(data.message || "Registration failed.");

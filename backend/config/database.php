@@ -26,19 +26,19 @@ $dbname = !empty($dbEnv['DB_NAME']) ? $dbEnv['DB_NAME'] : (getenv('DB_NAME') ?: 
 $username = !empty($dbEnv['DB_USER']) ? $dbEnv['DB_USER'] : (getenv('DB_USER') ?: "root");
 $password = isset($dbEnv['DB_PASS']) ? $dbEnv['DB_PASS'] : (getenv('DB_PASS') !== false ? getenv('DB_PASS') : "");
 
-$conn = new mysqli($host, $username, $password, $dbname);
-
-if ($conn->connect_error) {
-    error_log("Database connection failed: " . $conn->connect_error);
-    http_response_code(500);
+try {
+    $conn = new mysqli($host, $username, $password, $dbname);
+    $conn->set_charset("utf8mb4");
+} catch (mysqli_sql_exception $exception) {
+    error_log("Database connection failed: " . $exception->getMessage());
+    http_response_code(503);
+    header("Content-Type: application/json; charset=utf-8");
     echo json_encode([
         "success" => false,
-        "message" => "Database connection failed. Please check database server configuration."
+        "message" => "The authentication service is temporarily unavailable. Please ensure the database server is running and try again."
     ]);
     exit;
 }
-
-$conn->set_charset("utf8mb4");
 
 // Ensure database tables and columns are up to date (auto-migration check)
 $phoneCheck = $conn->query("SHOW COLUMNS FROM users LIKE 'phone_number'");
