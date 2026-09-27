@@ -28,7 +28,6 @@ const STUDENT_NAV = [
     items: [
       { label: "Dashboard", to: "/dashboard", icon: Home, end: true },
       { label: "My Reports", to: "/dashboard/reports", icon: Package },
-      { label: "Browse Found Items", to: "/found-items", icon: Search },
       { label: "My Claims", to: "/dashboard/claims", icon: HandCoins },
       { label: "Notifications", to: "/notifications", icon: Bell, badge: true },
     ]
