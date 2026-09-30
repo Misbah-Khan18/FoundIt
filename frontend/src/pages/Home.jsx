@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext.jsx";
+import { useAuth, API_BASE_URL } from "../context/AuthContext.jsx";
 import MotionScroll from "../components/MotionScroll.jsx";
 import { ArrowRight, Send, CheckCircle2 } from "lucide-react";
 import "./Home.css";
@@ -81,7 +81,7 @@ export default function Home() {
     }
   };
 
-  const handleFeedbackSubmit = (e) => {
+  const handleFeedbackSubmit = async (e) => {
     e.preventDefault();
     if (!feedbackName || !feedbackEmail || !feedbackMessage) {
       setError("Please fill out all fields.");
@@ -90,10 +90,28 @@ export default function Home() {
     setError("");
     setSubmitting(true);
 
-    setTimeout(() => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/feedback/create.php`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          name: feedbackName,
+          email: feedbackEmail,
+          message: feedbackMessage,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setSubmitted(true);
+      } else {
+        setError(data.message || "Failed to submit feedback.");
+      }
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
       setSubmitting(false);
-      setSubmitted(true);
-    }, 1000);
+    }
   };
 
   return (

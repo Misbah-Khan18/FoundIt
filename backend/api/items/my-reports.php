@@ -21,6 +21,8 @@ $result = $stmt->get_result();
 
 $items = [];
 while ($row = $result->fetch_assoc()) {
+    $row["id"] = (int)$row["id"];
+    $row["user_id"] = (int)$row["user_id"];
     $items[] = $row;
 }
 

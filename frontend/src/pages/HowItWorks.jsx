@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Layers, ShieldCheck, Cpu, Send, CheckCircle2 } from "lucide-react";
 import PageHero from "../components/PageHero.jsx";
+import { API_BASE_URL } from "../context/AuthContext.jsx";
 import "./About.css";
 import "./HowItWorks.css";
 
@@ -12,7 +13,7 @@ export default function HowItWorks() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name || !email || !message) {
       setError("Please fill out all fields.");
@@ -21,11 +22,24 @@ export default function HowItWorks() {
     setError("");
     setSubmitting(true);
 
-    // Simulate submission delay
-    setTimeout(() => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/feedback/create.php`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ name, email, message }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setSubmitted(true);
+      } else {
+        setError(data.message || "Failed to submit feedback.");
+      }
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
       setSubmitting(false);
-      setSubmitted(true);
-    }, 1200);
+    }
   };
 
 

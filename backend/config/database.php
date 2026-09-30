@@ -124,4 +124,21 @@ if ($rateLimitsTableCheck && $rateLimitsTableCheck->num_rows === 0) {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 }
 
+// Auto-Migration: feedback table
+$feedbackTableCheck = $conn->query("SHOW TABLES LIKE 'feedback'");
+if ($feedbackTableCheck && $feedbackTableCheck->num_rows === 0) {
+    $conn->query("CREATE TABLE feedback (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NULL,
+        name VARCHAR(100) NOT NULL,
+        email VARCHAR(150) NOT NULL,
+        message TEXT NOT NULL,
+        rating INT DEFAULT 5,
+        status ENUM('pending', 'reviewed', 'resolved') DEFAULT 'pending',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+}
+
 ?>

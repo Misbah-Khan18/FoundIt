@@ -13,6 +13,7 @@ import {
   Check,
   X as XIcon,
   ChevronRight,
+  MessageSquare,
 } from "lucide-react";
 import Badge from "../../components/Badge.jsx";
 import {
@@ -35,6 +36,7 @@ export default function AdminOverview() {
     activities,
     matches,
     claims,
+    feedback,
     approveReport,
     rejectReport,
     markAsFound,
@@ -42,6 +44,8 @@ export default function AdminOverview() {
     confirmMatch,
     rejectMatch,
     deleteReport,
+    resolveFeedback,
+    deleteFeedback,
     refreshAdminData,
   } = useAdmin();
 
@@ -923,6 +927,129 @@ export default function AdminOverview() {
           </div>
         </div>
       </div>
+
+      {/* Student Feedback & Inquiries Section */}
+        <div
+          style={{
+            marginTop: "24px",
+            background: "#ffffff",
+            borderRadius: "16px",
+            padding: "20px 24px",
+            border: "1px solid rgba(139, 92, 246, 0.12)",
+            boxShadow: "0 4px 20px -2px rgba(124, 58, 237, 0.05)",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <MessageSquare size={18} color="#7c3aed" />
+              <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "#0f172a", margin: 0 }}>
+                Student Feedback &amp; Suggestions
+              </h3>
+              <span
+                style={{
+                  background: "#f5f3ff",
+                  color: "#7c3aed",
+                  fontWeight: 700,
+                  fontSize: "0.75rem",
+                  padding: "2px 8px",
+                  borderRadius: "12px",
+                }}
+              >
+                {feedback.length} submissions
+              </span>
+            </div>
+          </div>
+
+          {feedback.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "28px 12px", color: "#64748b", fontSize: "0.88rem" }}>
+              No feedback submissions received yet.
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              {feedback.map((fb) => (
+                <div
+                  key={fb.id}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    padding: "14px 16px",
+                    background: "#f8fafc",
+                    borderRadius: "12px",
+                    border: "1px solid #e2e8f0",
+                    gap: "16px",
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+                      <strong style={{ fontSize: "0.9rem", color: "#0f172a" }}>{fb.name}</strong>
+                      <span style={{ fontSize: "0.78rem", color: "#64748b" }}>({fb.email})</span>
+                      <span
+                        style={{
+                          fontSize: "0.7rem",
+                          fontWeight: 700,
+                          textTransform: "uppercase",
+                          padding: "2px 6px",
+                          borderRadius: "6px",
+                          background:
+                            fb.status === "resolved" ? "#dcfce7" : fb.status === "reviewed" ? "#e0f2fe" : "#fef3c7",
+                          color:
+                            fb.status === "resolved" ? "#15803d" : fb.status === "reviewed" ? "#0369a1" : "#b45309",
+                        }}
+                      >
+                        {fb.status}
+                      </span>
+                    </div>
+                    <p style={{ margin: "4px 0 6px", fontSize: "0.85rem", color: "#334155", lineHeight: 1.4 }}>
+                      {fb.message}
+                    </p>
+                    <span style={{ fontSize: "0.72rem", color: "#94a3b8" }}>
+                      Submitted {fb.created_at ? new Date(fb.created_at).toLocaleString() : "Recently"}
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
+                    {fb.status === "pending" && (
+                      <button
+                        type="button"
+                        onClick={() => resolveFeedback(fb.id, "reviewed")}
+                        style={{
+                          background: "#e0f2fe",
+                          border: "1px solid #bae6fd",
+                          borderRadius: "6px",
+                          padding: "6px 10px",
+                          fontSize: "0.75rem",
+                          fontWeight: 600,
+                          color: "#0369a1",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Mark Reviewed
+                      </button>
+                    )}
+                    {fb.status !== "resolved" && (
+                      <button
+                        type="button"
+                        onClick={() => resolveFeedback(fb.id, "resolved")}
+                        style={{
+                          background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                          border: "none",
+                          borderRadius: "6px",
+                          padding: "6px 12px",
+                          fontSize: "0.75rem",
+                          fontWeight: 700,
+                          color: "#ffffff",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Resolve
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
       {/* MODALS */}
       <ItemDetailsModal

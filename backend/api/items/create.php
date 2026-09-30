@@ -12,9 +12,6 @@ require_once('../../middleware/csrf.php');
 $authenticatedUser = requireAuth($conn);
 $user_id = (int)$authenticatedUser["id"];
 
-// Enforce CSRF token validation on item creation
-validateCsrfToken($_POST);
-
 // Parse data (supports both multipart/form-data and JSON)
 $title = "";
 $type = "";
@@ -22,24 +19,25 @@ $category = "";
 $location = "";
 $item_date = "";
 $description = "";
+$jsonData = null;
 
-if (isset($_POST["title"])) {
+if (!empty($_POST["title"]) || !empty($_POST["type"])) {
     $title = trim($_POST["title"] ?? "");
     $type = trim($_POST["type"] ?? "");
     $category = trim($_POST["category"] ?? "");
     $location = trim($_POST["location"] ?? "");
     $item_date = trim($_POST["item_date"] ?? $_POST["date"] ?? "");
     $description = trim($_POST["description"] ?? "");
+    validateCsrfToken($_POST);
 } else {
-    $jsonData = json_decode(file_get_contents("php://input"), true);
-    if ($jsonData) {
-        $title = trim($jsonData["title"] ?? "");
-        $type = trim($jsonData["type"] ?? "");
-        $category = trim($jsonData["category"] ?? "");
-        $location = trim($jsonData["location"] ?? "");
-        $item_date = trim($jsonData["item_date"] ?? $jsonData["date"] ?? "");
-        $description = trim($jsonData["description"] ?? "");
-    }
+    $jsonData = json_decode(file_get_contents("php://input"), true) ?: [];
+    validateCsrfToken($jsonData);
+    $title = trim($jsonData["title"] ?? "");
+    $type = trim($jsonData["type"] ?? "");
+    $category = trim($jsonData["category"] ?? "");
+    $location = trim($jsonData["location"] ?? "");
+    $item_date = trim($jsonData["item_date"] ?? $jsonData["date"] ?? "");
+    $description = trim($jsonData["description"] ?? "");
 }
 
 // Validation

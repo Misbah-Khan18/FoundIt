@@ -14,6 +14,7 @@ export function AdminProvider({ children }) {
   const [matches, setMatches] = useState([]);
   const [activities, setActivities] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [feedback, setFeedback] = useState([]);
   const [loading, setLoading] = useState(isAdmin);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -58,13 +59,14 @@ export function AdminProvider({ children }) {
 
     setIsRefreshing(true);
     try {
-      const [repRes, userRes, claimRes, matchRes, actRes, notifRes] = await Promise.allSettled([
+      const [repRes, userRes, claimRes, matchRes, actRes, notifRes, feedRes] = await Promise.allSettled([
         fetch(`${API_BASE_URL}/admin/reports.php`, { credentials: "include" }),
         fetch(`${API_BASE_URL}/admin/users.php`, { credentials: "include" }),
         fetch(`${API_BASE_URL}/admin/claims.php`, { credentials: "include" }),
         fetch(`${API_BASE_URL}/admin/matches.php`, { credentials: "include" }),
         fetch(`${API_BASE_URL}/admin/activities.php`, { credentials: "include" }),
         fetch(`${API_BASE_URL}/admin/notifications.php`, { credentials: "include" }),
+        fetch(`${API_BASE_URL}/admin/feedback.php`, { credentials: "include" }),
       ]);
 
       if (repRes.status === "fulfilled" && repRes.value.ok) {
@@ -106,6 +108,13 @@ export function AdminProvider({ children }) {
         const notifData = await notifRes.value.json();
         if (notifData.success && notifData.notifications) {
           setNotifications(notifData.notifications);
+        }
+      }
+
+      if (feedRes.status === "fulfilled" && feedRes.value.ok) {
+        const feedData = await feedRes.value.json();
+        if (feedData.success && feedData.feedback) {
+          setFeedback(feedData.feedback);
         }
       }
 
@@ -510,6 +519,55 @@ export function AdminProvider({ children }) {
     [users, addToast, broadcastAdminChange, refreshAdminData]
   );
 
+  // Action: Resolve Feedback
+  const resolveFeedback = useCallback(
+    async (feedbackId, status = "resolved") => {
+      try {
+        const res = await fetchWithCsrf(`${API_BASE_URL}/admin/feedback.php`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ feedback_id: feedbackId, status }),
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          addToast(`✓ Feedback marked as ${status}`, "success");
+          broadcastAdminChange();
+          await refreshAdminData();
+        } else {
+          addToast(data.message || "Failed to update feedback.", "error");
+        }
+      } catch (e) {
+        console.error("Resolve feedback error:", e);
+        addToast("Network error updating feedback.", "error");
+      }
+    },
+    [addToast, broadcastAdminChange, refreshAdminData]
+  );
+
+  // Action: Delete Feedback
+  const deleteFeedback = useCallback(
+    async (feedbackId) => {
+      try {
+        const res = await fetchWithCsrf(`${API_BASE_URL}/admin/feedback.php`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ feedback_id: feedbackId }),
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          addToast("Feedback deleted.", "info");
+          broadcastAdminChange();
+          await refreshAdminData();
+        } else {
+          addToast(data.message || "Failed to delete feedback.", "error");
+        }
+      } catch (e) {
+        console.error("Delete feedback error:", e);
+      }
+    },
+    [addToast, broadcastAdminChange, refreshAdminData]
+  );
+
   // Dynamically calculated metrics from live database state
   const totalReportsCount = items.length;
   const lostReportsCount = items.filter((i) => i.type === "lost").length;
@@ -531,6 +589,7 @@ export function AdminProvider({ children }) {
     totalUsers: users.length,
     potentialMatchesCount: matches.filter((m) => m.status === "pending" || m.status === "unconfirmed").length,
     recoveryRate: recoveryRate,
+    pendingFeedbackCount: feedback.filter((f) => f.status === "pending").length,
   };
 
   const value = {
@@ -540,6 +599,7 @@ export function AdminProvider({ children }) {
     matches,
     activities,
     notifications,
+    feedback,
     loading,
     isRefreshing,
     lastUpdated,
@@ -564,6 +624,8 @@ export function AdminProvider({ children }) {
     rejectMatch,
     toggleUserRole,
     toggleUserStatus,
+    resolveFeedback,
+    deleteFeedback,
   };
 
   return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;

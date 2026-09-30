@@ -7,7 +7,7 @@ VALUES (
     'Campus Administrator',
     'admin@mitwpu.edu.in',
     '+919876543210',
-    '$2y$10$e7f0o3BqN57eQ0w.iGzZ5OqWz9wE2k3uKk8G5J8b/Z8gP/8X/P6Kq', -- Admin@1234
+    '$2y$10$H2cH6XvO8.yS8EhMKzY5KOl/22aasygvH06PK3PiDy/MCkf8Xddm2', -- Admin@1234
     'admin'
 )
 ON DUPLICATE KEY UPDATE 
@@ -17,9 +17,9 @@ ON DUPLICATE KEY UPDATE
 -- 2. Sample Students (Password: Password@123)
 INSERT INTO users (id, name, email, phone_number, password, role)
 VALUES 
-    (2, 'Aarav Mehta', 'aarav.mehta@mitwpu.edu.in', '9876543211', '$2y$10$e7f0o3BqN57eQ0w.iGzZ5OqWz9wE2k3uKk8G5J8b/Z8gP/8X/P6Kq', 'student'),
-    (3, 'Riya Sharma', 'riya.sharma@mitwpu.edu.in', '9876543212', '$2y$10$e7f0o3BqN57eQ0w.iGzZ5OqWz9wE2k3uKk8G5J8b/Z8gP/8X/P6Kq', 'student'),
-    (4, 'Vikram Patil', 'vikram.patil@mitwpu.edu.in', '9876543213', '$2y$10$e7f0o3BqN57eQ0w.iGzZ5OqWz9wE2k3uKk8G5J8b/Z8gP/8X/P6Kq', 'student')
+    (2, 'Aarav Mehta', 'aarav.mehta@mitwpu.edu.in', '9876543211', '$2y$10$mxh/BJ0N.Qze3tCdF3i1AOPbEAURkBreCts/cu7HQRCeKj84aZJPa', 'student'),
+    (3, 'Riya Sharma', 'riya.sharma@mitwpu.edu.in', '9876543212', '$2y$10$mxh/BJ0N.Qze3tCdF3i1AOPbEAURkBreCts/cu7HQRCeKj84aZJPa', 'student'),
+    (4, 'Vikram Patil', 'vikram.patil@mitwpu.edu.in', '9876543213', '$2y$10$mxh/BJ0N.Qze3tCdF3i1AOPbEAURkBreCts/cu7HQRCeKj84aZJPa', 'student')
 ON DUPLICATE KEY UPDATE name=VALUES(name);
 
 -- 3. Sample Items
